@@ -24,8 +24,9 @@ class DailyMoodEntry(models.Model):
     created_at    = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        db_table = 'daily_mood_entries'
-        indexes  = [models.Index(fields=['user', 'recorded_date'])]
+        db_table        = 'daily_mood_entries'
+        unique_together = [('user', 'recorded_date')]
+        indexes         = [models.Index(fields=['user', 'recorded_date'])]
 
     def __str__(self):
         return f"Mood(user={self.user_id}, level={self.mood_level}, date={self.recorded_date})"

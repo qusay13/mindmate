@@ -34,7 +34,7 @@ class User(AbstractBaseUser):
     gender                     = models.CharField(max_length=20, choices=GENDER_CHOICES, blank=True, null=True)
     phone_number               = models.CharField(max_length=20, blank=True, null=True)
     nationality                = models.CharField(max_length=100, blank=True, null=True)
-    profile_image              = models.TextField(blank=True, null=True)
+    profile_image              = models.ImageField(upload_to='profiles/', blank=True, null=True)
     is_active                  = models.BooleanField(default=True)
     is_onboarded               = models.BooleanField(default=False)
     initial_survey_completed   = models.BooleanField(default=False)
@@ -64,7 +64,18 @@ class User(AbstractBaseUser):
 # DOCTOR
 # ============================================================
 
-class Doctor(models.Model):
+class DoctorManager(BaseUserManager):
+    def create_user(self, email, password=None, **extra_fields):
+        if not email:
+            raise ValueError('Email is required for Doctor')
+        email = self.normalize_email(email)
+        user  = self.model(email=email, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+
+class Doctor(AbstractBaseUser):
     STATUS_CHOICES = [
         ('pending',  'Pending'),
         ('approved', 'Approved'),
@@ -73,13 +84,12 @@ class Doctor(models.Model):
 
     doctor_id        = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email            = models.EmailField(unique=True)
-    password_hash    = models.TextField()
     full_name        = models.CharField(max_length=150)
     nationality      = models.CharField(max_length=100, blank=True, null=True)
     specialization   = models.CharField(max_length=150, blank=True, null=True)
     bio              = models.TextField(blank=True, null=True)
-    profile_image    = models.TextField(blank=True, null=True)
-    cv_file_path     = models.TextField(blank=True, null=True)
+    profile_image    = models.ImageField(upload_to='profiles/', blank=True, null=True)
+    cv_file_path     = models.FileField(upload_to='cvs/', blank=True, null=True)
     status           = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     rejection_reason = models.TextField(blank=True, null=True)
     is_active        = models.BooleanField(default=True)
@@ -87,6 +97,11 @@ class Doctor(models.Model):
     deleted_at       = models.DateTimeField(blank=True, null=True)
     created_at       = models.DateTimeField(auto_now_add=True)
     updated_at       = models.DateTimeField(auto_now=True)
+
+    USERNAME_FIELD  = 'email'
+    REQUIRED_FIELDS = []
+
+    objects = DoctorManager()
 
     class Meta:
         db_table = 'doctors'
@@ -107,12 +122,27 @@ class Doctor(models.Model):
 # ADMIN
 # ============================================================
 
-class Admin(models.Model):
+class AdminManager(BaseUserManager):
+    def create_user(self, email, password=None, **extra_fields):
+        if not email:
+            raise ValueError('Email is required for Admin')
+        email = self.normalize_email(email)
+        user  = self.model(email=email, **extra_fields)
+        user.set_password(password)
+        user.save(using=self._db)
+        return user
+
+
+class Admin(AbstractBaseUser):
     admin_id      = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     email         = models.EmailField(unique=True)
-    password_hash = models.TextField()
     full_name     = models.CharField(max_length=150, blank=True, null=True)
     created_at    = models.DateTimeField(auto_now_add=True)
+
+    USERNAME_FIELD  = 'email'
+    REQUIRED_FIELDS = []
+
+    objects = AdminManager()
 
     class Meta:
         db_table = 'admins'

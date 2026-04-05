@@ -95,45 +95,29 @@ class DoctorPatientRelationship(models.Model):
 
 
 # ============================================================
-# MESSAGES — USER → DOCTOR
+# DOCTOR-PATIENT MESSAGES
 # ============================================================
 
-class DoctorPatientMessageUser(models.Model):
-    message_id      = models.AutoField(primary_key=True)
-    relationship    = models.ForeignKey(DoctorPatientRelationship, on_delete=models.CASCADE, related_name='user_messages')
-    sender          = models.ForeignKey('accounts.User', on_delete=models.CASCADE, related_name='sent_messages')
-    content         = models.TextField()
-    is_read         = models.BooleanField(default=False)
-    sent_at         = models.DateTimeField(auto_now_add=True)
-    read_at         = models.DateTimeField(blank=True, null=True)
+class DoctorPatientMessage(models.Model):
+    SENDER_CHOICES = [
+        ('user', 'User'),
+        ('doctor', 'Doctor'),
+    ]
 
-    class Meta:
-        db_table = 'doctor_patient_messages_user'
-        indexes  = [models.Index(fields=['relationship', 'sent_at'])]
-
-    def __str__(self):
-        return f"UserMsg(rel={self.relationship_id}, sender={self.sender_id})"
-
-
-# ============================================================
-# MESSAGES — DOCTOR → USER
-# ============================================================
-
-class DoctorPatientMessageDoctor(models.Model):
     message_id   = models.AutoField(primary_key=True)
-    relationship = models.ForeignKey(DoctorPatientRelationship, on_delete=models.CASCADE, related_name='doctor_messages')
-    sender       = models.ForeignKey('accounts.Doctor', on_delete=models.CASCADE, related_name='sent_messages')
+    relationship = models.ForeignKey(DoctorPatientRelationship, on_delete=models.CASCADE, related_name='messages')
+    sender_type  = models.CharField(max_length=10, choices=SENDER_CHOICES)
     content      = models.TextField()
     is_read      = models.BooleanField(default=False)
     sent_at      = models.DateTimeField(auto_now_add=True)
     read_at      = models.DateTimeField(blank=True, null=True)
 
     class Meta:
-        db_table = 'doctor_patient_messages_doctor'
+        db_table = 'doctor_patient_messages'
         indexes  = [models.Index(fields=['relationship', 'sent_at'])]
 
     def __str__(self):
-        return f"DoctorMsg(rel={self.relationship_id}, sender={self.sender_id})"
+        return f"Message({self.sender_type}, rel={self.relationship_id})"
 
 
 # ============================================================
