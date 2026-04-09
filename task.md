@@ -1,0 +1,23 @@
+# API and Authentication Implementation Checklist
+
+- `[/]` 1. **Setup DRF and CORS**
+  - `[ ]` Install `djangorestframework` and `django-cors-headers`.
+  - `[ ]` Add to `INSTALLED_APPS` and `MIDDLEWARE` in `config/settings.py`.
+  - `[ ]` Configure REST_FRAMEWORK and CORS settings.
+- `[ ]` 2. **Serializers (`accounts/serializers.py`)**
+  - `[ ]` Create `UserRegistrationSerializer`.
+  - `[ ]` Create `DoctorRegistrationSerializer`.
+  - `[ ]` Create `UserSerializer`, `DoctorSerializer`, `AdminSerializer`.
+  - `[ ]` Create `LoginSerializer`.
+- `[ ]` 3. **Custom Authentication (`accounts/authentication.py`)**
+  - `[ ]` Build `CustomTokenAuthentication` class.
+  - `[ ]` Implement robust error handling (Missing header, Invalid token, Expired session).
+  - `[ ]` Use `hashlib.sha256(token.encode()).hexdigest()` to match token to `UserSession.token_hash`.
+- `[ ]` 4. **Views (`accounts/views.py`)**
+  - `[ ]` Implement `UserRegistrationView`.
+  - `[ ]` Implement `DoctorRegistrationView`.
+  - `[ ]` Implement `LoginView` (Generates random token, captures IP and Device Info, expiry 7 days).
+  - `[ ]` Implement `LogoutView`.
+- `[ ]` 5. **URL Routing**
+  - `[ ]` Add `accounts/urls.py` with `register/user`, `register/doctor`, `login`, and `logout` paths.
+  - `[ ]` Include `accounts.urls` in `config/urls.py`.
