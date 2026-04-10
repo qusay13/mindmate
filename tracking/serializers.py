@@ -4,8 +4,19 @@ from .models import (
     JournalEntry, 
     QuestionnaireSession, 
     DailyProgress,
-    QuestionnaireType
+    QuestionnaireType,
+    QuestionnaireQuestion
 )
+
+class QuestionnaireTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = QuestionnaireType
+        fields = ['questionnaire_type_id', 'code', 'name', 'description', 'max_score', 'scoring_ranges']
+
+class QuestionnaireQuestionSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = QuestionnaireQuestion
+        fields = ['question_id', 'questionnaire_type', 'question_text', 'question_order', 'options']
 
 class DailyMoodSerializer(serializers.ModelSerializer):
     class Meta:

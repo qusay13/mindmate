@@ -211,9 +211,11 @@ class DailyProgress(models.Model):
 
     def save(self, *args, **kwargs):
         # Mirror the DB trigger logic in Django
-        self.questionnaire_completed = self.phq9_completed and self.gad7_completed and self.pss10_completed
+        # Optimized: completed if ANY questionnaire is done for now
+        self.questionnaire_completed = self.phq9_completed or self.gad7_completed or self.pss10_completed
         self.all_completed           = self.mood_completed and self.questionnaire_completed and self.journal_completed
         super().save(*args, **kwargs)
+
 
     def __str__(self):
         return f"Progress(user={self.user_id}, date={self.progress_date}, done={self.all_completed})"

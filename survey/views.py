@@ -7,8 +7,10 @@ from rest_framework.throttling import UserRateThrottle
 from accounts.authentication import CustomTokenAuthentication
 from .models import InitialSurveyQuestion, InitialSurveyResponse
 from .serializers import InitialSurveyQuestionSerializer, SubmitSurveySerializer
+from tracking.models import DailyProgress
 
 logger = logging.getLogger(__name__)
+
 
 class QuestionListView(generics.ListAPIView):
     authentication_classes = [CustomTokenAuthentication]
@@ -52,9 +54,11 @@ class SubmitSurveyView(views.APIView):
             user.is_onboarded = True
             user.data_collection_start_date = timezone.now().date()
             user.save(update_fields=['initial_survey_completed', 'is_onboarded', 'data_collection_start_date'])
-        
+            
         # Logging success
         logger.info(f"[SUCCESS] User {user.user_id} submitted initial survey with {len(responses_data)} responses at {timezone.now()}.")
+
+
             
         return Response({'message': 'Survey submitted successfully'}, status=status.HTTP_201_CREATED)
 

@@ -7,12 +7,16 @@ from rest_framework.throttling import UserRateThrottle
 from accounts.authentication import CustomTokenAuthentication
 from .models import (
     DailyMoodEntry, JournalEntry, DailyProgress, 
-    QuestionnaireSession, QuestionnaireAnswer, QuestionnaireQuestion
+    QuestionnaireSession, QuestionnaireAnswer, QuestionnaireQuestion,
+    QuestionnaireType
 )
+
 from .serializers import (
     DailyMoodSerializer, JournalEntrySerializer, 
-    DailyProgressSerializer, SubmitQuestionnaireSerializer
+    DailyProgressSerializer, SubmitQuestionnaireSerializer,
+    QuestionnaireTypeSerializer, QuestionnaireQuestionSerializer
 )
+
 
 logger = logging.getLogger(__name__)
 
@@ -110,6 +114,38 @@ class SubmitQuestionnaireView(views.APIView):
     permission_classes = [permissions.IsAuthenticated]
     throttle_classes = [UserRateThrottle]
 
+    def _compute_severity(self, q_type, total_score):
+        """
+        يحدد مستوى الشدة بناءً على scoring_ranges المحفوظة في QuestionnaireType.
+        
+        scoring_ranges يجب أن يكون بصيغة:
+        [
+            {"min": 0,  "max": 4,  "level": "Minimal"},
+            {"min": 5,  "max": 9,  "level": "Mild"},
+            {"min": 10, "max": 14, "level": "Moderate"},
+            {"min": 15, "max": 19, "level": "Moderately Severe"},
+            {"min": 20, "max": 27, "level": "Severe"}
+        ]
+        
+        إذا لم تكن scoring_ranges معرّفة، يستخدم النسبة المئوية كـ fallback.
+        """
+        if q_type.scoring_ranges:
+            for range_item in q_type.scoring_ranges:
+                if range_item['min'] <= total_score <= range_item['max']:
+                    return range_item['level']
+        
+        # Fallback: percentage-based severity using max_score
+        percentage = (total_score / q_type.max_score) * 100 if q_type.max_score else 0
+        if percentage >= 70:
+            return 'Severe'
+        elif percentage >= 50:
+            return 'Moderately Severe'
+        elif percentage >= 35:
+            return 'Moderate'
+        elif percentage >= 15:
+            return 'Mild'
+        return 'Minimal'
+
     def post(self, request):
         serializer = SubmitQuestionnaireSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -148,13 +184,8 @@ class SubmitQuestionnaireView(views.APIView):
                 
             session.total_score = total_score
             
-            # Basic fallback if RaedRepo logic is added later
-            if total_score > 15:
-                session.severity_level = 'Severe'
-            elif total_score > 10:
-                session.severity_level = 'Moderate'
-            else:
-                session.severity_level = 'Mild'
+            # Determine severity using scoring_ranges from QuestionnaireType
+            session.severity_level = self._compute_severity(q_type, total_score)
                 
             session.completed = True
             session.completed_at = timezone.now()
@@ -176,3 +207,22 @@ class SubmitQuestionnaireView(views.APIView):
             'total_score': total_score,
             'severity_level': session.severity_level
         }, status=status.HTTP_201_CREATED)
+
+class QuestionnaireTypeListView(generics.ListAPIView):
+    authentication_classes = [CustomTokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = QuestionnaireTypeSerializer
+    queryset = QuestionnaireType.objects.filter(is_active=True)
+
+class QuestionnaireQuestionListView(views.APIView):
+    authentication_classes = [CustomTokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, code):
+        try:
+            q_type = QuestionnaireType.objects.get(code=code, is_active=True)
+            questions = QuestionnaireQuestion.objects.filter(questionnaire_type=q_type, is_active=True)
+            return Response(QuestionnaireQuestionSerializer(questions, many=True).data)
+        except QuestionnaireType.DoesNotExist:
+            return Response({'error': 'Questionnaire not found'}, status=status.HTTP_404_NOT_FOUND)
+
