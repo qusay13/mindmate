@@ -24,15 +24,58 @@ class JournalEntrySerializer(serializers.ModelSerializer):
         fields = ['journal_id', 'content', 'entry_date', 'created_at', 'updated_at']
         read_only_fields = ['journal_id', 'entry_date', 'created_at', 'updated_at']
 
+from datetime import timedelta
+
 class DailyProgressSerializer(serializers.ModelSerializer):
+    completion = serializers.SerializerMethodField()
+    missing = serializers.SerializerMethodField()
+    completed = serializers.SerializerMethodField()
+    streak = serializers.SerializerMethodField()
+
     class Meta:
         model = DailyProgress
         fields = [
             'progress_id', 'progress_date', 
+            'completion', 'missing', 'completed', 'streak',
             'mood_completed', 'phq9_completed', 'gad7_completed', 
             'pss10_completed', 'questionnaire_completed', 
             'journal_completed', 'all_completed', 'tip_shown'
         ]
+
+    def get_completion(self, obj):
+        total = 3
+        done = sum([obj.mood_completed, obj.journal_completed, obj.questionnaire_completed])
+        return int((done / total) * 100)
+
+    def get_missing(self, obj):
+        m = []
+        if not obj.mood_completed: m.append('mood')
+        if not obj.journal_completed: m.append('journal')
+        if not obj.questionnaire_completed: m.append('questionnaire')
+        return m
+
+    def get_completed(self, obj):
+        c = []
+        if obj.mood_completed: c.append('mood')
+        if obj.journal_completed: c.append('journal')
+        if obj.questionnaire_completed: c.append('questionnaire')
+        return c
+
+    def get_streak(self, obj):
+        count = 0
+        completed_dates = set(DailyProgress.objects.filter(
+            user=obj.user, all_completed=True
+        ).values_list('progress_date', flat=True))
+        
+        if obj.progress_date in completed_dates or obj.all_completed:
+            count += 1
+            
+        cur_date = obj.progress_date - timedelta(days=1)
+        while cur_date in completed_dates:
+            count += 1
+            cur_date -= timedelta(days=1)
+            
+        return count
 
 class QuestionnaireAnswerSerializer(serializers.Serializer):
     question_id = serializers.IntegerField(required=True)

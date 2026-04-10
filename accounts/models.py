@@ -87,6 +87,8 @@ class Doctor(AbstractBaseUser):
     full_name        = models.CharField(max_length=150)
     nationality      = models.CharField(max_length=100, blank=True, null=True)
     specialization   = models.CharField(max_length=150, blank=True, null=True)
+    whatsapp_number  = models.CharField(max_length=20, null=True, blank=True)
+    is_whatsapp_visible = models.BooleanField(default=True)
     bio              = models.TextField(blank=True, null=True)
     profile_image    = models.ImageField(upload_to='profiles/', blank=True, null=True)
     cv_file_path     = models.FileField(upload_to='cvs/', blank=True, null=True)
