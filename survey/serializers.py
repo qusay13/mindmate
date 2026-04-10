@@ -10,6 +10,7 @@ class InitialSurveyResponseSerializer(serializers.Serializer):
     question_id = serializers.IntegerField(required=True)
     answer_text = serializers.CharField(required=False, allow_blank=True, allow_null=True)
     answer_value = serializers.FloatField(required=False, allow_null=True)
+    score = serializers.FloatField(required=False, allow_null=True)  # AI future scoring
 
     def validate(self, data):
         try:
