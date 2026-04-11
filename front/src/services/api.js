@@ -41,6 +41,7 @@ export const trackingAPI = {
   getQuestionnaireTypes: () => api.get('tracking/questionnaires/'),
   getQuestionnaireQuestions: (code) => api.get(`tracking/questionnaires/${code}/questions/`),
   submitQuestionnaire: (data) => api.post('tracking/questionnaires/submit/', data),
+  getAnalysis: () => api.get('tracking/analysis/'),
 };
 
 

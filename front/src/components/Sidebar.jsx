@@ -1,17 +1,16 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, ClipboardList, Stethoscope, MessageSquare, Bell, LogOut } from 'lucide-react';
+import { LayoutDashboard, ClipboardList, Stethoscope, BarChart3, LogOut } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const Sidebar = () => {
-  const { logout, user } = useAuth();
+  const { logout } = useAuth();
 
   const menuItems = [
     { icon: <LayoutDashboard size={20} />, label: 'Dashboard', path: '/' },
+    { icon: <BarChart3 size={20} />, label: 'Analysis', path: '/analysis' },
     { icon: <ClipboardList size={20} />, label: 'Survey', path: '/survey' },
     { icon: <Stethoscope size={20} />, label: 'Clinic', path: '/clinic' },
-    { icon: <MessageSquare size={20} />, label: 'Chatbot', path: '/chat' },
-    { icon: <Bell size={20} />, label: 'Notifications', path: '/notifications' },
   ];
 
   return (

@@ -58,6 +58,10 @@ class DailyMoodView(views.APIView):
                 }
             )
             
+            # Invalidate analysis cache for user
+            from django.core.cache import cache
+            cache.delete(f"user_analysis_{user.user_id}")
+            
             progress = get_or_create_daily_progress(user, today)
             progress.mood_completed = True
             progress.save()
@@ -116,35 +120,13 @@ class SubmitQuestionnaireView(views.APIView):
 
     def _compute_severity(self, q_type, total_score):
         """
-        يحدد مستوى الشدة بناءً على scoring_ranges المحفوظة في QuestionnaireType.
-        
-        scoring_ranges يجب أن يكون بصيغة:
-        [
-            {"min": 0,  "max": 4,  "level": "Minimal"},
-            {"min": 5,  "max": 9,  "level": "Mild"},
-            {"min": 10, "max": 14, "level": "Moderate"},
-            {"min": 15, "max": 19, "level": "Moderately Severe"},
-            {"min": 20, "max": 27, "level": "Severe"}
-        ]
-        
-        إذا لم تكن scoring_ranges معرّفة، يستخدم النسبة المئوية كـ fallback.
+        يستدعي خوارزمية RaedRepo مباشرة لحساب مستوى الشدة والخطورة.
         """
-        if q_type.scoring_ranges:
-            for range_item in q_type.scoring_ranges:
-                if range_item['min'] <= total_score <= range_item['max']:
-                    return range_item['level']
+        from external.RaedRepo.scoring import classify_questionnaire_severity
         
-        # Fallback: percentage-based severity using max_score
-        percentage = (total_score / q_type.max_score) * 100 if q_type.max_score else 0
-        if percentage >= 70:
-            return 'Severe'
-        elif percentage >= 50:
-            return 'Moderately Severe'
-        elif percentage >= 35:
-            return 'Moderate'
-        elif percentage >= 15:
-            return 'Mild'
-        return 'Minimal'
+        # Returns tuple (arabic_label, english_key)
+        label_ar, key = classify_questionnaire_severity(total_score, q_type.code.replace('-', ''))
+        return key
 
     def post(self, request):
         serializer = SubmitQuestionnaireSerializer(data=request.data)
@@ -191,9 +173,13 @@ class SubmitQuestionnaireView(views.APIView):
             session.completed_at = timezone.now()
             session.save()
             
+            # Invalidate analysis cache for user
+            from django.core.cache import cache
+            cache.delete(f"user_analysis_{user.user_id}")
+            
             # Update generic Progress Tracker
             progress = get_or_create_daily_progress(user, today)
-            code_lower = q_type.code.lower()
+            code_lower = q_type.code.lower().replace('-', '')
             completed_field = f"{code_lower}_completed"
             
             if hasattr(progress, completed_field):
@@ -225,4 +211,26 @@ class QuestionnaireQuestionListView(views.APIView):
             return Response(QuestionnaireQuestionSerializer(questions, many=True).data)
         except QuestionnaireType.DoesNotExist:
             return Response({'error': 'Questionnaire not found'}, status=status.HTTP_404_NOT_FOUND)
+
+class ComprehensiveAnalysisView(views.APIView):
+    authentication_classes = [CustomTokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+    throttle_classes = [UserRateThrottle]
+
+    def get(self, request):
+        from .services.analysis_service import AnalysisService
+        from django.core.cache import cache
+        
+        user_id = request.user.user_id
+        cache_key = f"user_analysis_{user_id}"
+        
+        cached_data = cache.get(cache_key)
+        if cached_data:
+            return Response(cached_data, status=status.HTTP_200_OK)
+            
+        analysis_data = AnalysisService.generate_analysis(request.user)
+        
+        # Cache for 6 hours unless invalidated earlier
+        cache.set(cache_key, analysis_data, timeout=6 * 60 * 60)
+        return Response(analysis_data, status=status.HTTP_200_OK)
 

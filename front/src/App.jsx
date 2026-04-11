@@ -9,11 +9,17 @@ import Dashboard from './pages/Dashboard';
 import SurveyPage from './pages/SurveyPage';
 import ClinicPage from './pages/ClinicPage';
 import DailyAssessmentPage from './pages/DailyAssessmentPage';
+import AnalysisPage from './pages/AnalysisPage';
 
 
 const ProtectedRoute = ({ children }) => {
   const { user, loading } = useAuth();
-  if (loading) return <div>Loading...</div>;
+  if (loading) return (
+    <div className="loading-screen">
+      <div className="loader"></div>
+      <p>Loading...</p>
+    </div>
+  );
   if (!user) return <Navigate to="/login" />;
   return children;
 };
@@ -31,10 +37,10 @@ const AppContent = () => {
             <Route path="/login" element={!user ? <LoginPage /> : <Navigate to="/" />} />
             <Route path="/register" element={!user ? <RegisterPage /> : <Navigate to="/" />} />
             <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/analysis" element={<ProtectedRoute><AnalysisPage /></ProtectedRoute>} />
             <Route path="/survey" element={<ProtectedRoute><SurveyPage /></ProtectedRoute>} />
             <Route path="/clinic" element={<ProtectedRoute><ClinicPage /></ProtectedRoute>} />
             <Route path="/assessment/:code" element={<ProtectedRoute><DailyAssessmentPage /></ProtectedRoute>} />
-
           </Routes>
         </div>
       </div>

@@ -1,19 +1,22 @@
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
-import { User as UserIcon } from 'lucide-react';
 
 const Navbar = () => {
   const { user } = useAuth();
 
+  const initials = user?.full_name
+    ? user.full_name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2)
+    : 'U';
+
   return (
     <div className="navbar">
       <div className="user-badge">
-        <div className="user-info text-right mr-3">
-          <p className="font-bold text-sm">{user?.full_name}</p>
-          <p className="text-xs text-secondary capitalize">{user?.role}</p>
+        <div style={{ textAlign: 'right' }}>
+          <p style={{ fontSize: '14px', fontWeight: 600, lineHeight: 1.3 }}>{user?.full_name}</p>
+          <p style={{ fontSize: '12px', color: 'var(--text-secondary)', textTransform: 'capitalize' }}>{user?.role}</p>
         </div>
         <div className="avatar">
-          <UserIcon size={20} className="accent" />
+          {initials}
         </div>
       </div>
     </div>
