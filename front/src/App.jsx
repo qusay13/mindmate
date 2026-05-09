@@ -10,6 +10,11 @@ import SurveyPage from './pages/SurveyPage';
 import ClinicPage from './pages/ClinicPage';
 import DailyAssessmentPage from './pages/DailyAssessmentPage';
 import AnalysisPage from './pages/AnalysisPage';
+import AdminDashboard from './pages/AdminDashboard';
+import DoctorDashboard from './pages/DoctorDashboard';
+import ChatPage from './pages/ChatPage';
+import PatientDetailPage from './pages/PatientDetailPage';
+import ChatbotPage from './pages/ChatbotPage';
 
 
 const ProtectedRoute = ({ children }) => {
@@ -36,7 +41,16 @@ const AppContent = () => {
           <Routes>
             <Route path="/login" element={!user ? <LoginPage /> : <Navigate to="/" />} />
             <Route path="/register" element={!user ? <RegisterPage /> : <Navigate to="/" />} />
-            <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/" element={
+              <ProtectedRoute>
+                {user?.role === 'admin' ? <AdminDashboard />
+                  : user?.role === 'doctor' ? <DoctorDashboard />
+                  : <Dashboard />}
+              </ProtectedRoute>
+            } />
+            <Route path="/patient/:id" element={<ProtectedRoute><PatientDetailPage /></ProtectedRoute>} />
+            <Route path="/chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
+            <Route path="/chatbot" element={<ProtectedRoute><ChatbotPage /></ProtectedRoute>} />
             <Route path="/analysis" element={<ProtectedRoute><AnalysisPage /></ProtectedRoute>} />
             <Route path="/survey" element={<ProtectedRoute><SurveyPage /></ProtectedRoute>} />
             <Route path="/clinic" element={<ProtectedRoute><ClinicPage /></ProtectedRoute>} />

@@ -8,7 +8,7 @@ from accounts.authentication import CustomTokenAuthentication
 from .models import (
     DailyMoodEntry, JournalEntry, DailyProgress, 
     QuestionnaireSession, QuestionnaireAnswer, QuestionnaireQuestion,
-    QuestionnaireType
+    QuestionnaireType, JournalSharingPermission
 )
 
 from .serializers import (
@@ -233,4 +233,37 @@ class ComprehensiveAnalysisView(views.APIView):
         # Cache for 6 hours unless invalidated earlier
         cache.set(cache_key, analysis_data, timeout=6 * 60 * 60)
         return Response(analysis_data, status=status.HTTP_200_OK)
+
+
+class JournalSharingPermissionView(views.APIView):
+    authentication_classes = [CustomTokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        # We need a doctor to check permission for. 
+        # For simplicity, if patient is linked to any doctor, we show/manage those perms.
+        # But user wants a general toggle? No, perms are per doctor.
+        # We'll get all permissions for the current user.
+        perms = JournalSharingPermission.objects.filter(user=request.user)
+        data = [{
+            'doctor_id': p.doctor_id,
+            'doctor_name': p.doctor.full_name,
+            'share_full_journal': p.share_full_journal,
+            'share_analysis_only': p.share_analysis_only
+        } for p in perms]
+        return Response(data)
+
+    def post(self, request):
+        doctor_id = request.data.get('doctor_id')
+        share_full = request.data.get('share_full_journal', False)
+        
+        if not doctor_id:
+            return Response({'error': 'doctor_id is required'}, status=status.HTTP_400_BAD_REQUEST)
+            
+        perm, created = JournalSharingPermission.objects.update_or_create(
+            user=request.user,
+            doctor_id=doctor_id,
+            defaults={'share_full_journal': share_full}
+        )
+        return Response({'message': 'Permissions updated', 'share_full_journal': perm.share_full_journal})
 

@@ -59,6 +59,8 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [savingMood, setSavingMood] = useState(false);
   const [savingJournal, setSavingJournal] = useState(false);
+  const [sharingPerms, setSharingPerms] = useState([]); // Array of {doctor_id, share_full_journal}
+  const [togglingShare, setTogglingShare] = useState(false);
 
   useEffect(() => {
     fetchDashboardData();
@@ -75,12 +77,14 @@ const Dashboard = () => {
         trackingAPI.getMood().catch(() => ({ data: null })),
         trackingAPI.getJournal().catch(() => ({ data: null })),
         trackingAPI.getAnalysis().catch(() => ({ data: null })),
+        trackingAPI.getJournalSharing().catch(() => ({ data: [] })),
       ]);
 
       setProgress(progRes.data);
       if (moodRes.data) setMood(moodRes.data.mood_level);
       if (journalRes.data?.content) setJournal(journalRes.data.content);
       if (analysisRes.data) setAnalysis(analysisRes.data);
+      setSharingPerms(sharingRes.data || []);
     } catch (err) {
       console.error('Dashboard fetch failed:', err);
       setError('Could not load your progress. Please try refreshing.');
@@ -106,11 +110,29 @@ const Dashboard = () => {
     setSavingJournal(true);
     try {
       await trackingAPI.saveJournal({ content: journal });
+      setJournal(''); // Clear input after saving
       fetchDashboardData();
     } catch {
       alert('Failed to save journal');
     } finally {
       setSavingJournal(false);
+    }
+  };
+
+  const handleToggleSharing = async (doctorId, currentStatus) => {
+    setTogglingShare(true);
+    try {
+      await trackingAPI.updateJournalSharing({ 
+        doctor_id: doctorId, 
+        share_full_journal: !currentStatus 
+      });
+      setSharingPerms(prev => prev.map(p => 
+        p.doctor_id === doctorId ? { ...p, share_full_journal: !currentStatus } : p
+      ));
+    } catch {
+      alert('Failed to update sharing preference');
+    } finally {
+      setTogglingShare(false);
     }
   };
 
@@ -305,6 +327,34 @@ const Dashboard = () => {
               <span className="q-badge done"><CheckCircle2 size={12} /> Saved</span>
             )}
           </div>
+          
+          {sharingPerms.length > 0 && (
+            <div style={{ 
+              marginBottom: '1rem', padding: '0.75rem', borderRadius: '12px', 
+              background: 'rgba(167, 139, 250, 0.05)', border: '1px solid rgba(167, 139, 250, 0.1)',
+              display: 'flex', alignItems: 'center', justifyContent: 'space-between'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                <Stethoscope size={18} className="text-accent" />
+                <div>
+                  <div style={{ fontSize: '0.9rem', fontWeight: 600 }}>Share with Doctor</div>
+                  <div style={{ fontSize: '0.75rem', color: '#888' }}>
+                    Allow Dr. {sharingPerms[0].doctor_name} to view your full journal entries.
+                  </div>
+                </div>
+              </div>
+              <label className="switch">
+                <input 
+                  type="checkbox" 
+                  checked={sharingPerms[0].share_full_journal} 
+                  onChange={() => handleToggleSharing(sharingPerms[0].doctor_id, sharingPerms[0].share_full_journal)}
+                  disabled={togglingShare}
+                />
+                <span className="slider round"></span>
+              </label>
+            </div>
+          )}
+
           <textarea
             className="input-field journal-input"
             placeholder="Write about your day, thoughts, or feelings..."

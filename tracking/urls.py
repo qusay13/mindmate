@@ -2,7 +2,7 @@ from django.urls import path
 from .views import (
     DailyMoodView, DailyJournalView, DailyProgressView, 
     SubmitQuestionnaireView, QuestionnaireTypeListView, QuestionnaireQuestionListView,
-    ComprehensiveAnalysisView
+    ComprehensiveAnalysisView, JournalSharingPermissionView
 )
 
 
@@ -14,5 +14,6 @@ urlpatterns = [
     path('questionnaires/<str:code>/questions/', QuestionnaireQuestionListView.as_view(), name='questionnaire-questions'),
     path('questionnaires/submit/', SubmitQuestionnaireView.as_view(), name='submit-questionnaire'),
     path('analysis/', ComprehensiveAnalysisView.as_view(), name='comprehensive-analysis'),
+    path('journal/sharing/', JournalSharingPermissionView.as_view(), name='journal-sharing'),
 ]
 

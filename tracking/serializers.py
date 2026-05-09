@@ -5,7 +5,8 @@ from .models import (
     QuestionnaireSession, 
     DailyProgress,
     QuestionnaireType,
-    QuestionnaireQuestion
+    QuestionnaireQuestion,
+    JournalAnalysis
 )
 
 class QuestionnaireTypeSerializer(serializers.ModelSerializer):
@@ -112,3 +113,8 @@ class SubmitQuestionnaireSerializer(serializers.Serializer):
                 raise serializers.ValidationError(f"Duplicate answer detected for question_id {qid}.")
             seen_questions.add(qid)
         return answers
+
+class JournalAnalysisSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = JournalAnalysis
+        fields = '__all__'

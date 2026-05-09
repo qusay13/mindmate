@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from accounts.models import Doctor
+from accounts.models import Doctor, User
 from .models import DoctorPatientRequest, DoctorPatientRelationship
 from .services.doctor_service import can_view_whatsapp
 
@@ -9,12 +9,14 @@ class DoctorApprovalSerializer(serializers.Serializer):
 
 class DoctorProfileLiteSerializer(serializers.ModelSerializer):
     whatsapp_number = serializers.SerializerMethodField()
-    
+    link_status = serializers.SerializerMethodField()
+
     class Meta:
         model = Doctor
         fields = [
-            'doctor_id', 'full_name', 'specialization', 'nationality', 
-            'bio', 'profile_image', 'whatsapp_number', 'is_whatsapp_visible'
+            'doctor_id', 'full_name', 'specialization', 'nationality',
+            'bio', 'profile_image', 'whatsapp_number', 'is_whatsapp_visible',
+            'status', 'email', 'link_status'
         ]
 
     def get_whatsapp_number(self, obj):
@@ -39,6 +41,21 @@ class DoctorProfileLiteSerializer(serializers.ModelSerializer):
             return "***"
         return None
 
+    def get_link_status(self, obj):
+        request = self.context.get('request')
+        if not request or not hasattr(request.user, 'user_id'):
+            return 'none'
+        
+        # Check active relationship
+        if DoctorPatientRelationship.objects.filter(user=request.user, doctor=obj, status='active').exists():
+            return 'linked'
+            
+        # Check pending request
+        if DoctorPatientRequest.objects.filter(user=request.user, doctor=obj, status='pending').exists():
+            return 'pending'
+            
+        return 'none'
+
 class DoctorContactSerializer(serializers.Serializer):
     whatsapp_link = serializers.SerializerMethodField()
     whatsapp_number = serializers.SerializerMethodField()
@@ -55,3 +72,25 @@ class DoctorContactSerializer(serializers.Serializer):
 class DoctorPatientLinkSerializer(serializers.Serializer):
     doctor_id = serializers.UUIDField(required=True)
     request_type = serializers.ChoiceField(choices=['system_suggested', 'user_selected'], default='user_selected')
+
+class PatientSerializer(serializers.ModelSerializer):
+    status = serializers.SerializerMethodField()
+
+    class Meta:
+        model = User
+        fields = ['user_id', 'full_name', 'email', 'gender', 'nationality', 'status']
+
+    def get_status(self, obj):
+        doctor = self.context.get('doctor')
+        if not doctor:
+            return 'active'
+        rel = DoctorPatientRelationship.objects.filter(user=obj, doctor=doctor).first()
+        return rel.status if rel else 'active'
+
+class DoctorPatientRequestSerializer(serializers.ModelSerializer):
+    user_name = serializers.CharField(source='user.full_name', read_only=True)
+    user_email = serializers.CharField(source='user.email', read_only=True)
+
+    class Meta:
+        model = DoctorPatientRequest
+        fields = ['request_id', 'user_id', 'user_name', 'user_email', 'request_type', 'status', 'requested_at']
