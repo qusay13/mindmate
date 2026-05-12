@@ -23,8 +23,23 @@ api.interceptors.request.use((config) => {
 export const authAPI = {
   login: (credentials) => api.post('accounts/login/', credentials),
   registerUser: (data) => api.post('accounts/register/user/', data),
-  registerDoctor: (data) => api.post('accounts/register/doctor/', data),
+  registerDoctor: (data, config = {}) => api.post('accounts/register/doctor/', data, config),
   logout: () => api.post('accounts/logout/'),
+  getAdminStats: () => api.get('accounts/admin/stats/'),
+  getAdminUsers: () => api.get('accounts/admin/users/'),
+  deactivateUser: (id) => api.post(`accounts/admin/users/${id}/deactivate/`),
+  deactivateDoctor: (id) => api.post(`accounts/admin/doctors/${id}/deactivate/`),
+};
+
+export const profileAPI = {
+  getUserProfile: () => api.get('accounts/profile/user/'),
+  updateUserProfile: (data) => api.patch('accounts/profile/user/', data, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
+  getDoctorProfile: () => api.get('accounts/profile/doctor/'),
+  updateDoctorProfile: (data) => api.patch('accounts/profile/doctor/', data, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }),
 };
 
 export const surveyAPI = {
@@ -44,6 +59,8 @@ export const trackingAPI = {
   getAnalysis: () => api.get('tracking/analysis/'),
   getJournalSharing: () => api.get('tracking/journal/sharing/'),
   updateJournalSharing: (data) => api.post('tracking/journal/sharing/', data),
+  getDailyTip: () => api.get('tracking/daily-tip/'),
+  getJournalHistory: () => api.get('tracking/journal/history/'),
 };
 
 
@@ -61,6 +78,8 @@ export const clinicAPI = {
   getPatientAnalysis: (id) => api.get(`clinic/doctor/patients/${id}/analysis/`),
   getRequests: () => api.get('clinic/doctor/requests/'),
   handleRequestAction: (id, action) => api.post(`clinic/doctor/requests/${id}/action/`, { action }),
+  rateDoctor: (id, data) => api.post(`clinic/doctors/${id}/ratings/`, data),
+  suggestDoctor: () => api.get('clinic/suggest-doctor/'),
 };
 
 export const chatbotAPI = {
@@ -72,6 +91,11 @@ export const chatbotAPI = {
 export const chatAPI = {
   getConversations: () => api.get('chat/conversations/'),
   getMessages: (conversationId) => api.get(`chat/conversations/${conversationId}/messages/`),
+};
+
+export const notificationsAPI = {
+  getNotifications: (role = 'user') => api.get(`notifications/${role}/`),
+  markAllRead: (role = 'user') => api.post(`notifications/${role}/mark-read/`),
 };
 
 export const WS_BASE_URL = 'ws://localhost:8000/ws/';

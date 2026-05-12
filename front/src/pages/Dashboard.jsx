@@ -5,7 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { 
   Smile, Frown, Meh, BookOpen, TrendingUp, CheckCircle2, 
   AlertCircle, ChevronRight, Brain, Activity, HeartPulse, 
-  Flame, BarChart3, Sparkles
+  Flame, BarChart3, Sparkles, Stethoscope
 } from 'lucide-react';
 
 const MOOD_OPTIONS = [
@@ -59,8 +59,9 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [savingMood, setSavingMood] = useState(false);
   const [savingJournal, setSavingJournal] = useState(false);
-  const [sharingPerms, setSharingPerms] = useState([]); // Array of {doctor_id, share_full_journal}
+  const [sharingPerms, setSharingPerms] = useState([]);
   const [togglingShare, setTogglingShare] = useState(false);
+  const [dailyTip, setDailyTip] = useState(null);
 
   useEffect(() => {
     fetchDashboardData();
@@ -70,21 +71,21 @@ const Dashboard = () => {
     setLoading(true);
     setError(null);
     try {
-      const [progRes, moodRes, journalRes, analysisRes] = await Promise.all([
+      const [progRes, moodRes, analysisRes, sharingRes, tipRes] = await Promise.all([
         trackingAPI.getProgress().catch(() => ({
           data: { completion: 0, streak: 0, completed: [], mood_completed: false, questionnaire_completed: false, journal_completed: false, phq9_completed: false, gad7_completed: false, pss10_completed: false }
         })),
         trackingAPI.getMood().catch(() => ({ data: null })),
-        trackingAPI.getJournal().catch(() => ({ data: null })),
         trackingAPI.getAnalysis().catch(() => ({ data: null })),
         trackingAPI.getJournalSharing().catch(() => ({ data: [] })),
+        trackingAPI.getDailyTip().catch(() => ({ data: null })),
       ]);
 
       setProgress(progRes.data);
       if (moodRes.data) setMood(moodRes.data.mood_level);
-      if (journalRes.data?.content) setJournal(journalRes.data.content);
       if (analysisRes.data) setAnalysis(analysisRes.data);
       setSharingPerms(sharingRes.data || []);
+      if (tipRes.data && !tipRes.data.detail) setDailyTip(tipRes.data);
     } catch (err) {
       console.error('Dashboard fetch failed:', err);
       setError('Could not load your progress. Please try refreshing.');
@@ -163,6 +164,16 @@ const Dashboard = () => {
       <header className="page-header">
         <h1>Welcome back, {user?.full_name || 'User'} 👋</h1>
         <p>Here's your mental wellness overview for today.</p>
+        
+        {dailyTip && (
+          <div className="glass-card" style={{ marginTop: '1rem', padding: '1rem', borderLeft: '4px solid #3fb950', background: 'rgba(63, 185, 80, 0.1)' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.5rem' }}>
+              <Sparkles size={18} color="#3fb950" />
+              <strong style={{ color: '#3fb950' }}>Daily Tip</strong>
+            </div>
+            <p style={{ margin: 0, fontSize: '0.95rem' }}>{dailyTip.content}</p>
+          </div>
+        )}
       </header>
 
       <div className="dashboard-grid">
@@ -361,13 +372,23 @@ const Dashboard = () => {
             value={journal}
             onChange={(e) => setJournal(e.target.value)}
           />
-          <button
-            className="btn-primary"
-            onClick={handleJournalSubmit}
-            disabled={savingJournal || !journal.trim()}
-          >
-            {savingJournal ? 'Saving...' : 'Save Journal Entry'}
-          </button>
+          <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
+            <button
+              className="btn-primary"
+              onClick={handleJournalSubmit}
+              disabled={savingJournal || !journal.trim()}
+              style={{ flex: 1 }}
+            >
+              {savingJournal ? 'Saving...' : 'Save Journal Entry'}
+            </button>
+            <button
+              className="btn-secondary"
+              onClick={() => navigate('/journal-history')}
+              style={{ padding: '0 1.5rem' }}
+            >
+              View History
+            </button>
+          </div>
         </section>
       </div>
     </div>

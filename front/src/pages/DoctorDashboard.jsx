@@ -40,7 +40,7 @@ const DoctorDashboard = () => {
     try {
       await clinicAPI.handleRequestAction(requestId, action);
       fetchData();
-    } catch (err) {
+    } catch {
       alert('Failed to process request');
     }
   };
@@ -57,7 +57,7 @@ const DoctorDashboard = () => {
       <AlertCircle size={48} className="error-icon" />
       <h2>Something went wrong</h2>
       <p>{error}</p>
-      <button className="btn-primary" onClick={fetchPatients}>Try Again</button>
+      <button className="btn-primary" onClick={fetchData}>Try Again</button>
     </div>
   );
 

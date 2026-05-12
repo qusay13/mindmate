@@ -2,18 +2,19 @@ from rest_framework import status, views, permissions, generics
 from rest_framework.response import Response
 from django.db import transaction
 from django.utils import timezone
-from .models import DoctorPatientRelationship, DoctorPatientRequest
+from .models import DoctorPatientRelationship, DoctorPatientRequest, DoctorRating
 from accounts.models import Doctor
 from chat.models import Conversation
 from .serializers import (
     DoctorApprovalSerializer, DoctorProfileLiteSerializer, 
     DoctorPatientLinkSerializer, DoctorContactSerializer, PatientSerializer,
-    DoctorPatientRequestSerializer
+    DoctorPatientRequestSerializer, DoctorRatingSerializer
 )
 from tracking.models import DailyMoodEntry, JournalEntry, JournalAnalysis, JournalSharingPermission
 from tracking.serializers import DailyMoodSerializer, JournalEntrySerializer, JournalAnalysisSerializer
 from accounts.authentication import CustomTokenAuthentication
 from .services.doctor_service import can_view_whatsapp
+from rest_framework import serializers
 
 class IsDoctorPermission(permissions.BasePermission):
     def has_permission(self, request, view):
@@ -123,6 +124,20 @@ class PatientDoctorLinkView(views.APIView):
                 request_type=serializer.validated_data['request_type'],
                 status='pending'
             )
+
+        # Notify the doctor about the new request
+        try:
+            from notifications.services import notify_doctor
+            notify_doctor(
+                doctor     = doctor,
+                title      = '\U0001f514 طلب ربط جديد من مريض',
+                body       = f'المريض {user.full_name or user.email} يطلب الارتباط بك.',
+                notif_type = 'link_request',
+                related_entity_type = 'request',
+                related_entity_id   = request_obj.request_id,
+            )
+        except Exception:
+            pass   # لا يوقف الطلب إذا فشل الإشعار
 
         return Response({
             'message': 'Link request sent to the doctor. Please wait for approval.',
@@ -256,7 +271,7 @@ class DoctorRequestActionView(views.APIView):
                 req_obj.status = 'accepted'
                 req_obj.responded_at = timezone.now()
                 req_obj.save()
-                
+
                 # Create Relationship
                 DoctorPatientRelationship.objects.create(
                     doctor=req_obj.doctor,
@@ -264,16 +279,139 @@ class DoctorRequestActionView(views.APIView):
                     request=req_obj,
                     status='active'
                 )
-                
+
                 # Create Conversation
                 Conversation.objects.get_or_create(
                     patient=req_obj.user,
                     doctor=req_obj.doctor
                 )
-                
+
+                # Notify patient
+                try:
+                    from notifications.services import notify_user
+                    notify_user(
+                        user       = req_obj.user,
+                        title      = '\u2705 الطبيب وافق على طلبك',
+                        body       = f'وافق الدكتور {req_obj.doctor.full_name} على طلبك. يمكنك التواصل معه الآن.',
+                        notif_type = 'link_accepted',
+                        related_entity_type = 'doctor',
+                    )
+                except Exception:
+                    pass
+
                 return Response({'message': 'Request accepted successfully.'})
             else:
                 req_obj.status = 'rejected'
                 req_obj.responded_at = timezone.now()
                 req_obj.save()
+
+                # Notify patient
+                try:
+                    from notifications.services import notify_user
+                    notify_user(
+                        user       = req_obj.user,
+                        title      = '\u274c طلبك لم يُقبل',
+                        body       = f'اعتذر الدكتور {req_obj.doctor.full_name} عن قبول طلبك في الوقت الحالي.',
+                        notif_type = 'link_rejected',
+                        related_entity_type = 'doctor',
+                    )
+                except Exception:
+                    pass
+
                 return Response({'message': 'Request rejected.'})
+
+class DoctorRatingListView(generics.ListCreateAPIView):
+    authentication_classes = [CustomTokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = DoctorRatingSerializer
+
+    def get_queryset(self):
+        doctor_id = self.kwargs.get('doctor_id')
+        return DoctorRating.objects.filter(doctor_id=doctor_id).order_by('-created_at')
+
+    def perform_create(self, serializer):
+        doctor_id = self.kwargs.get('doctor_id')
+        user = self.request.user
+        
+        print(f"DEBUG: Rating attempt by user {user.email} (ID: {getattr(user, 'user_id', 'N/A')}) for doctor ID {doctor_id}")
+        
+        if not hasattr(user, 'user_id'):
+            raise serializers.ValidationError("Only patients can rate doctors.")
+            
+        # Check if they are linked
+        # Using explicit ID matching to avoid any model instance comparison issues
+        has_rel = DoctorPatientRelationship.objects.filter(
+            user__user_id=getattr(user, 'user_id', None), 
+            doctor__doctor_id=doctor_id, 
+            status='active'
+        ).exists()
+        
+        print(f"DEBUG: Relationship active check for UserID {getattr(user, 'user_id', 'N/A')} and DoctorID {doctor_id}: {has_rel}")
+        
+        if not has_rel:
+            raise serializers.ValidationError("You can only rate doctors you are connected with.")
+            
+        # Check if already rated
+        if DoctorRating.objects.filter(user__user_id=getattr(user, 'user_id', None), doctor__doctor_id=doctor_id).exists():
+            raise serializers.ValidationError("You have already rated this doctor.")
+            
+        serializer.save(user=user, doctor_id=doctor_id)
+
+
+# ============================================================
+# DOCTOR SUGGESTION (AI Recommendation - suggestion only, no auto-link)
+# ============================================================
+
+class SuggestDoctorView(views.APIView):
+    """
+    Returns a suggested doctor based on the user's most severe questionnaire result.
+    Does NOT create any relationship - it's only a suggestion card.
+    """
+    authentication_classes = [CustomTokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+
+    SEVERITY_RANK = {
+        'severe': 6,
+        'moderately_severe': 5,
+        'high': 5,
+        'high_perceived_stress': 5,
+        'moderate': 4,
+        'moderate_perceived_stress': 3,
+        'mild': 2,
+        'low': 1,
+        'minimal': 0,
+        'normal': 0,
+    }
+
+    def get(self, request):
+        if not hasattr(request.user, 'user_id'):
+            return Response({'detail': 'Only patients can get suggestions.'}, status=403)
+
+        user = request.user
+
+        from django.utils import timezone
+        from tracking.models import QuestionnaireSession
+        from clinic.services.recommendation_service import suggest_doctor_for_user
+
+        thirty_days_ago = timezone.localdate() - timezone.timedelta(days=30)
+
+        sessions = QuestionnaireSession.objects.filter(
+            user=user, completed=True, session_date__gte=thirty_days_ago
+        ).exclude(severity_level__in=['', None, 'minimal', 'mild', 'normal', 'low']).select_related('questionnaire_type')
+
+        if not sessions.exists():
+            return Response({'suggestion': None, 'reason': 'No concerning questionnaire results in the last 30 days.'})
+
+        # Pick the session with the HIGHEST severity (not just most recent)
+        best_session = max(
+            sessions,
+            key=lambda s: self.SEVERITY_RANK.get(s.severity_level or '', 0) * 100 + (s.total_score or 0)
+        )
+
+        q_code = best_session.questionnaire_type.code.replace('-', '')
+        suggestion = suggest_doctor_for_user(user, q_code, best_session.severity_level)
+
+        if not suggestion:
+            return Response({'suggestion': None, 'reason': 'You are already connected with an appropriate doctor, or no specialists available.'})
+
+        return Response({'suggestion': suggestion})

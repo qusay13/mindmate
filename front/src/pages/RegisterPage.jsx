@@ -67,8 +67,8 @@ const RegisterPage = () => {
             I am a Patient
           </button>
           <button 
-            className={role === 'doctor' ? 'active' : ''} 
-            onClick={() => setRole('doctor')}
+            className="" 
+            onClick={() => navigate('/doctor/register')}
           >
             I am a Doctor
           </button>
@@ -123,37 +123,7 @@ const RegisterPage = () => {
               </div>
             </div>
 
-            {role === 'doctor' && (
-              <>
-                <div className="form-group">
-                  <label>Specialization</label>
-                  <div className="input-with-icon">
-                    <Briefcase size={18} />
-                    <input
-                      type="text"
-                      className="input-field"
-                      placeholder="e.g. Clinical Psychologist"
-                      value={formData.specialization}
-                      onChange={(e) => setFormData({ ...formData, specialization: e.target.value })}
-                      required
-                    />
-                  </div>
-                </div>
-                <div className="form-group">
-                  <label>Clinic Address</label>
-                  <div className="input-with-icon">
-                    <MapPin size={18} />
-                    <input
-                      type="text"
-                      className="input-field"
-                      placeholder="123 Health St."
-                      value={formData.clinic_address}
-                      onChange={(e) => setFormData({ ...formData, clinic_address: e.target.value })}
-                    />
-                  </div>
-                </div>
-              </>
-            )}
+            {/* Doctor fields moved to dedicated page */}
           </div>
 
           <button type="submit" className="btn-primary full-width" disabled={loading}>

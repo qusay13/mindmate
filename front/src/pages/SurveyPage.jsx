@@ -1,8 +1,12 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { surveyAPI } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import { CheckCircle2, ChevronRight, ChevronLeft, Send } from 'lucide-react';
 
 const SurveyPage = () => {
+  const { updateUser } = useAuth();
+  const navigate = useNavigate();
   const [questions, setQuestions] = useState([]);
   const [currentStep, setCurrentStep] = useState(0);
   const [answers, setAnswers] = useState({});
@@ -55,7 +59,6 @@ const SurveyPage = () => {
       const responseList = Object.entries(answers).map(([qId, val]) => {
         const question = questions.find(q => q.question_id.toString() === qId);
         const isScale = question?.question_type === 'scale';
-        
         return {
           question_id: parseInt(qId),
           answer_text: isScale ? val.toString() : (question?.options[val] || val.toString()),
@@ -63,6 +66,8 @@ const SurveyPage = () => {
         };
       });
       await surveyAPI.submitResponses({ responses: responseList });
+      // ✅ تحديث الـ context و localStorage قبل التوجيه
+      updateUser({ initial_survey_completed: true, is_onboarded: true });
       setCompleted(true);
     } catch (err) {
       alert('Error submitting survey: ' + (err.response?.data?.error || 'Check your answers'));
@@ -83,7 +88,7 @@ const SurveyPage = () => {
           </div>
           <h2>Assessment Completed!</h2>
           <p>Thank you for completing your initial assessment. This helps us personalize your experience.</p>
-          <button className="btn-primary" onClick={() => window.location.href = '/'}>
+          <button className="btn-primary" onClick={() => navigate('/')}>
             Go to Dashboard
           </button>
         </div>
@@ -151,10 +156,8 @@ const SurveyPage = () => {
           </button>
 
           {currentStep === questions.length - 1 ? (
-            <button 
-              className="btn-primary" 
-              onClick={handleSubmit}
-              disabled={submitting || Object.keys(answers).length < questions.length}
+            <button className="btn-primary" onClick={handleSubmit}
+              disabled={submitting || questions.some(q => answers[q.question_id] === undefined)}
             >
               {submitting ? 'Submitting...' : <>Submit Assessment <Send size={18} /></>}
             </button>
@@ -162,7 +165,7 @@ const SurveyPage = () => {
             <button 
               className="btn-primary" 
               onClick={nextStep}
-              disabled={currentQuestion?.question_type !== 'scale' && !answers[currentQuestion.question_id]}
+              disabled={currentQuestion?.question_type !== 'scale' && answers[currentQuestion.question_id] === undefined}
             >
               Next <ChevronRight size={20} />
             </button>

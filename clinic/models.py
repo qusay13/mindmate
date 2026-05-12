@@ -144,3 +144,24 @@ class DoctorRegistrationLog(models.Model):
 
     def __str__(self):
         return f"RegLog(doctor={self.doctor_id}, action={self.action})"
+
+
+# ============================================================
+# DOCTOR RATINGS
+# ============================================================
+
+class DoctorRating(models.Model):
+    rating_id    = models.AutoField(primary_key=True)
+    doctor       = models.ForeignKey('accounts.Doctor', on_delete=models.CASCADE, related_name='ratings')
+    user         = models.ForeignKey('accounts.User',   on_delete=models.CASCADE, related_name='doctor_ratings')
+    score        = models.IntegerField() # 1 to 5
+    comment      = models.TextField(blank=True, null=True)
+    created_at   = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table        = 'doctor_ratings'
+        unique_together = [('doctor', 'user')]
+        indexes         = [models.Index(fields=['doctor'])]
+
+    def __str__(self):
+        return f"Rating(doctor={self.doctor_id}, user={self.user_id}, score={self.score})"

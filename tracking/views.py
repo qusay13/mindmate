@@ -1,4 +1,5 @@
 import logging
+import random
 from django.db import transaction
 from django.utils import timezone
 from rest_framework import status, views, permissions, generics
@@ -6,19 +7,82 @@ from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
 from accounts.authentication import CustomTokenAuthentication
 from .models import (
-    DailyMoodEntry, JournalEntry, DailyProgress, 
+    DailyMoodEntry, JournalEntry, DailyProgress,
     QuestionnaireSession, QuestionnaireAnswer, QuestionnaireQuestion,
     QuestionnaireType, JournalSharingPermission
 )
-
 from .serializers import (
-    DailyMoodSerializer, JournalEntrySerializer, 
+    DailyMoodSerializer, JournalEntrySerializer,
     DailyProgressSerializer, SubmitQuestionnaireSerializer,
     QuestionnaireTypeSerializer, QuestionnaireQuestionSerializer
 )
 
-
 logger = logging.getLogger(__name__)
+
+
+# ============================================================
+# DAILY TIP TRIGGER
+# ============================================================
+
+def _maybe_send_daily_tip(user, progress):
+    """
+    Called after every DailyProgress save.
+    If all_completed == True and no tip has been shown today,
+    picks a random active tip and creates:
+      1. UserDailyTip record (tracks what was shown)
+      2. UserNotification so the tip surfaces in the notifications feed.
+    """
+    if not progress.all_completed or progress.tip_shown:
+        return
+
+    from assessment.models import TipAndRecommendation, UserDailyTip
+    from notifications.services import notify_user
+
+    # Try to match tip to the user's latest severity
+    severity = None
+    latest_session = (
+        QuestionnaireSession.objects
+        .filter(user=user, completed=True)
+        .order_by('-completed_at')
+        .first()
+    )
+    if latest_session and latest_session.severity_level:
+        severity = latest_session.severity_level
+
+    # Build query: prefer severity-targeted tips, fall back to generic
+    tips_qs = TipAndRecommendation.objects.filter(is_active=True)
+    if severity:
+        targeted = list(tips_qs.filter(severity_target=severity))
+        tip_pool = targeted if targeted else list(tips_qs)
+    else:
+        tip_pool = list(tips_qs)
+
+    if not tip_pool:
+        return
+
+    chosen_tip = random.choice(tip_pool)
+
+    # Record the shown tip
+    UserDailyTip.objects.get_or_create(
+        user=user,
+        shown_date=progress.progress_date,
+        defaults={'tip': chosen_tip}
+    )
+
+    # Mark tip as shown on the progress record
+    DailyProgress.objects.filter(pk=progress.pk).update(tip_shown=True)
+
+    # Push an in-app notification
+    notify_user(
+        user       = user,
+        title      = '🌟 لقد أكملت يومك! إليك نصيحة اليوم',
+        body       = chosen_tip.content,
+        notif_type = 'daily_tip',
+        related_entity_type = 'tip',
+        related_entity_id   = chosen_tip.tip_id,
+    )
+
+    logger.info(f"[TIP] Sent daily tip #{chosen_tip.tip_id} to user {user.user_id} for {progress.progress_date}.")
 
 def get_or_create_daily_progress(user, date):
     progress, created = DailyProgress.objects.get_or_create(user=user, progress_date=date)
@@ -65,7 +129,8 @@ class DailyMoodView(views.APIView):
             progress = get_or_create_daily_progress(user, today)
             progress.mood_completed = True
             progress.save()
-            
+            _maybe_send_daily_tip(user, progress)
+
         logger.info(f"[TRACKING] User {user.user_id} {'created' if created else 'updated'} mood '{mood_label}' for {today}.")
         return Response(DailyMoodSerializer(mood).data, status=status.HTTP_200_OK if not created else status.HTTP_201_CREATED)
 
@@ -88,17 +153,24 @@ class DailyJournalView(views.APIView):
         
         user = request.user
         today = timezone.localdate()
+        new_content = serializer.validated_data['content']
         
         with transaction.atomic():
-            journal, created = JournalEntry.objects.update_or_create(
+            journal, created = JournalEntry.objects.get_or_create(
                 user=user, entry_date=today,
-                defaults={'content': serializer.validated_data['content']}
+                defaults={'content': new_content}
             )
+            if not created:
+                # Append to existing journal
+                time_now = timezone.localtime().strftime("%H:%M")
+                journal.content += f"\n\n--- {time_now} ---\n{new_content}"
+                journal.save()
             
             progress = get_or_create_daily_progress(user, today)
             progress.journal_completed = True
             progress.save()
-            
+            _maybe_send_daily_tip(user, progress)
+
         logger.info(f"[TRACKING] User {user.user_id} {'created' if created else 'updated'} journal for {today}.")
         return Response(JournalEntrySerializer(journal).data, status=status.HTTP_200_OK if not created else status.HTTP_201_CREATED)
 
@@ -185,14 +257,28 @@ class SubmitQuestionnaireView(views.APIView):
             if hasattr(progress, completed_field):
                 setattr(progress, completed_field, True)
                 progress.save()
-            
+                _maybe_send_daily_tip(user, progress)
+
             logger.info(f"[TRACKING] User {user.user_id} completed {q_type.code} questionnaire. Score: {total_score}")
-        
-        return Response({
-            'message': f'{q_type.code} submitted successfully', 
+
+        # ── Doctor Recommendation Engine ──────────────────────────
+        suggested_doctor = None
+        try:
+            from clinic.services.recommendation_service import suggest_doctor_for_user
+            q_code_clean = q_type.code.replace('-', '')
+            suggested_doctor = suggest_doctor_for_user(user, q_code_clean, session.severity_level)
+        except Exception as e:
+            logger.warning(f"[RECOMMENDATION] Failed to generate suggestion: {e}")
+
+        response_data = {
+            'message': f'{q_type.code} submitted successfully',
             'total_score': total_score,
-            'severity_level': session.severity_level
-        }, status=status.HTTP_201_CREATED)
+            'severity_level': session.severity_level,
+        }
+        if suggested_doctor:
+            response_data['suggested_doctor'] = suggested_doctor
+
+        return Response(response_data, status=status.HTTP_201_CREATED)
 
 class QuestionnaireTypeListView(generics.ListAPIView):
     authentication_classes = [CustomTokenAuthentication]
@@ -240,10 +326,18 @@ class JournalSharingPermissionView(views.APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        # We need a doctor to check permission for. 
-        # For simplicity, if patient is linked to any doctor, we show/manage those perms.
-        # But user wants a general toggle? No, perms are per doctor.
-        # We'll get all permissions for the current user.
+        # Find all active doctor relationships for this patient
+        from clinic.models import DoctorPatientRelationship
+        active_links = DoctorPatientRelationship.objects.filter(user=request.user, status='active')
+        
+        # Ensure a permission record exists for each linked doctor
+        for link in active_links:
+            JournalSharingPermission.objects.get_or_create(
+                user=request.user,
+                doctor=link.doctor,
+                defaults={'share_full_journal': False, 'share_analysis_only': True}
+            )
+
         perms = JournalSharingPermission.objects.filter(user=request.user)
         data = [{
             'doctor_id': p.doctor_id,
@@ -251,7 +345,7 @@ class JournalSharingPermissionView(views.APIView):
             'share_full_journal': p.share_full_journal,
             'share_analysis_only': p.share_analysis_only
         } for p in perms]
-        return Response(data)
+        return Response(data, status=status.HTTP_200_OK)
 
     def post(self, request):
         doctor_id = request.data.get('doctor_id')
@@ -266,4 +360,34 @@ class JournalSharingPermissionView(views.APIView):
             defaults={'share_full_journal': share_full}
         )
         return Response({'message': 'Permissions updated', 'share_full_journal': perm.share_full_journal})
+
+
+class UserDailyTipView(views.APIView):
+    """
+    Fetches the daily tip generated when the user completed all 3 tasks today.
+    """
+    authentication_classes = [CustomTokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        from assessment.models import UserDailyTip
+        today = timezone.localdate()
+        tip = UserDailyTip.objects.filter(user=request.user, shown_date=today).first()
+        if tip:
+            return Response({
+                'content': tip.tip.content,
+                'category': tip.tip.category
+            })
+        return Response({'detail': 'No tip for today yet.'}, status=status.HTTP_404_NOT_FOUND)
+
+class JournalHistoryView(generics.ListAPIView):
+    """
+    Returns the user's past journal entries.
+    """
+    authentication_classes = [CustomTokenAuthentication]
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = JournalEntrySerializer
+
+    def get_queryset(self):
+        return JournalEntry.objects.filter(user=self.request.user).order_by('-entry_date')
 

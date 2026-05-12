@@ -1,22 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { trackingAPI } from '../services/api';
+import { useNavigate } from 'react-router-dom';
+import { trackingAPI, clinicAPI } from '../services/api';
 import { 
   BarChart3, TrendingUp, TrendingDown, Minus, Shield, 
   Brain, HeartPulse, Activity, AlertTriangle, Lightbulb,
-  Calendar, Zap, Target, Layers
+  Calendar, Zap, Target, Layers, Stethoscope, ArrowRight
 } from 'lucide-react';
 
 const AnalysisPage = () => {
+  const navigate = useNavigate();
   const [analysis, setAnalysis] = useState(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState('fifteen');
+  const [suggestion, setSuggestion] = useState(null);
 
   useEffect(() => {
     const fetchAnalysis = async () => {
       try {
         const res = await trackingAPI.getAnalysis();
         setAnalysis(res.data);
-        // Auto-select tab based on available data
         if (res.data?.thirty_day_analysis) setActiveTab('thirty');
         else if (res.data?.fifteen_day_analysis) setActiveTab('fifteen');
         else setActiveTab('daily');
@@ -26,7 +28,18 @@ const AnalysisPage = () => {
         setLoading(false);
       }
     };
+
+    const fetchSuggestion = async () => {
+      try {
+        const res = await clinicAPI.suggestDoctor();
+        if (res.data?.suggestion) setSuggestion(res.data.suggestion);
+      } catch {
+        // Suggestion is optional - fail silently
+      }
+    };
+
     fetchAnalysis();
+    fetchSuggestion();
   }, []);
 
   if (loading) return (
@@ -257,6 +270,48 @@ const AnalysisPage = () => {
               ))}
             </div>
           </section>
+
+          {/* Doctor Recommendation Card */}
+          {suggestion && (
+            <section className="glass-card analysis-card full-row" style={{
+              background: 'linear-gradient(135deg, rgba(168,85,247,0.12), rgba(0,242,255,0.08))',
+              border: '1px solid rgba(168,85,247,0.35)',
+            }}>
+              <div className="card-header">
+                <Stethoscope size={18} style={{ color: '#a855f7' }} />
+                <h3 style={{ color: '#a855f7' }}>🤖 AI Doctor Recommendation</h3>
+                <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)', background: 'rgba(168,85,247,0.15)', padding: '3px 10px', borderRadius: 20 }}>
+                  Based on your {activeTab === 'thirty' ? '30-day' : '15-day'} analysis
+                </span>
+              </div>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem', marginBottom: '1rem', direction: 'rtl', textAlign: 'right', lineHeight: 1.7 }}>
+                {suggestion.message}
+              </p>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <div style={{
+                    width: 52, height: 52, borderRadius: '50%',
+                    background: 'linear-gradient(135deg, #a78bfa, #7c3aed)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: '1.3rem', fontWeight: 800, color: '#fff', flexShrink: 0
+                  }}>
+                    {suggestion.full_name?.[0]}
+                  </div>
+                  <div>
+                    <div style={{ fontWeight: 700, fontSize: '1rem' }}>{suggestion.full_name}</div>
+                    <div style={{ fontSize: '0.82rem', color: '#a855f7' }}>{suggestion.specialization}</div>
+                  </div>
+                </div>
+                <button
+                  onClick={() => navigate('/clinic')}
+                  className="btn-primary"
+                  style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '0.6rem 1.2rem' }}
+                >
+                  View in Clinic <ArrowRight size={16} />
+                </button>
+              </div>
+            </section>
+          )}
 
           {/* 30-Day Exclusive Features */}
           {activeTab === 'thirty' && thirty && (

@@ -1,7 +1,8 @@
 from rest_framework import serializers
 from accounts.models import Doctor, User
-from .models import DoctorPatientRequest, DoctorPatientRelationship
+from .models import DoctorPatientRequest, DoctorPatientRelationship, DoctorRating
 from .services.doctor_service import can_view_whatsapp
+from django.db.models import Avg
 
 class DoctorApprovalSerializer(serializers.Serializer):
     status = serializers.ChoiceField(choices=['approved', 'rejected'])
@@ -10,17 +11,27 @@ class DoctorApprovalSerializer(serializers.Serializer):
 class DoctorProfileLiteSerializer(serializers.ModelSerializer):
     whatsapp_number = serializers.SerializerMethodField()
     link_status = serializers.SerializerMethodField()
+    average_rating = serializers.SerializerMethodField()
+    ratings_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Doctor
         fields = [
             'doctor_id', 'full_name', 'specialization', 'nationality',
             'bio', 'profile_image', 'whatsapp_number', 'is_whatsapp_visible',
-            'status', 'email', 'link_status'
+            'status', 'email', 'link_status', 'average_rating', 'ratings_count',
+            'is_active', 'cv_file_path'
         ]
 
+    def get_average_rating(self, obj):
+        avg = DoctorRating.objects.filter(doctor=obj).aggregate(Avg('score'))['score__avg']
+        return round(avg, 1) if avg else 0.0
+
+    def get_ratings_count(self, obj):
+        return DoctorRating.objects.filter(doctor=obj).count()
+
     def get_whatsapp_number(self, obj):
-        # Privacy Control
+        # ... (rest of the method remains the same)
         request = self.context.get('request')
         if not request or not hasattr(request, 'user'):
             return None
@@ -42,6 +53,7 @@ class DoctorProfileLiteSerializer(serializers.ModelSerializer):
         return None
 
     def get_link_status(self, obj):
+        # ... (rest of the method remains the same)
         request = self.context.get('request')
         if not request or not hasattr(request.user, 'user_id'):
             return 'none'
@@ -55,6 +67,19 @@ class DoctorProfileLiteSerializer(serializers.ModelSerializer):
             return 'pending'
             
         return 'none'
+
+class DoctorRatingSerializer(serializers.ModelSerializer):
+    user_name = serializers.CharField(source='user.full_name', read_only=True)
+
+    class Meta:
+        model = DoctorRating
+        fields = ['rating_id', 'doctor', 'user', 'user_name', 'score', 'comment', 'created_at']
+        read_only_fields = ['rating_id', 'user', 'doctor', 'created_at']
+
+    def validate_score(self, value):
+        if value < 1 or value > 5:
+            raise serializers.ValidationError("Rating must be between 1 and 5.")
+        return value
 
 class DoctorContactSerializer(serializers.Serializer):
     whatsapp_link = serializers.SerializerMethodField()

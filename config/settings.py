@@ -170,6 +170,20 @@ STATIC_URL = 'static/'
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'media'
 
+# ============================================================
+# Email Configuration
+# In development: prints emails to console (no real sending).
+# In production:  set EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+#                 and configure EMAIL_HOST_* in .env
+# ============================================================
+EMAIL_BACKEND    = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
+EMAIL_HOST       = os.getenv('EMAIL_HOST', 'smtp.gmail.com')
+EMAIL_PORT       = int(os.getenv('EMAIL_PORT', 587))
+EMAIL_USE_TLS    = os.getenv('EMAIL_USE_TLS', 'True').lower() in ('true', '1', 'yes')
+EMAIL_HOST_USER  = os.getenv('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
+DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'noreply@mindmate.app')
+
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'accounts.authentication.CustomTokenAuthentication',

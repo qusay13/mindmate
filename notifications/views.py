@@ -1,55 +1,179 @@
-from rest_framework import generics, permissions, status
+from rest_framework import generics, views, permissions, status
 from rest_framework.response import Response
-from rest_framework.views import APIView
 from django.utils import timezone
-from .models import UserNotification, DoctorNotification
-from .serializers import UserNotificationSerializer, DoctorNotificationSerializer
 from accounts.authentication import CustomTokenAuthentication
+from .models import UserNotification, DoctorNotification
+
+
+# ============================================================
+# PERMISSION HELPERS
+# ============================================================
+
+class IsUserPermission(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return hasattr(request.user, 'user_id')
+
+
+class IsDoctorPermission(permissions.BasePermission):
+    def has_permission(self, request, view):
+        return hasattr(request.user, 'doctor_id') and request.user.status == 'approved'
+
+
+# ============================================================
+# USER NOTIFICATIONS
+# ============================================================
 
 class UserNotificationListView(generics.ListAPIView):
-    serializer_class = UserNotificationSerializer
+    """
+    GET /api/notifications/user/
+    يعيد قائمة الإشعارات الخاصة بالمستخدم (الأحدث أولاً).
+    Query params:
+      ?unread=true  — إشعارات غير مقروءة فقط
+    """
     authentication_classes = [CustomTokenAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes     = [IsUserPermission]
 
     def get_queryset(self):
-        return UserNotification.objects.filter(user=self.request.user).order_by('-created_at')
+        qs = UserNotification.objects.filter(user=self.request.user).order_by('-created_at')
+        if self.request.query_params.get('unread') == 'true':
+            qs = qs.filter(is_read=False)
+        return qs[:50]   # أحدث 50 إشعار
 
-class UserNotificationReadView(APIView):
+    def list(self, request, *args, **kwargs):
+        qs = self.get_queryset()
+        data = [
+            {
+                'notification_id':     n.notification_id,
+                'title':               n.title,
+                'body':                n.body,
+                'notification_type':   n.notification_type,
+                'related_entity_type': n.related_entity_type,
+                'related_entity_id':   n.related_entity_id,
+                'is_read':             n.is_read,
+                'created_at':          n.created_at,
+                'read_at':             n.read_at,
+            }
+            for n in qs
+        ]
+        unread_count = UserNotification.objects.filter(user=request.user, is_read=False).count()
+        return Response({'unread_count': unread_count, 'notifications': data})
+
+
+class UserNotificationMarkReadView(views.APIView):
+    """
+    POST /api/notifications/user/mark-read/
+    Body (optional): { "notification_ids": [1, 2, 3] }
+    إذا لم يُرسَل الـ body يُعلَّم الكل مقروءاً.
+    """
     authentication_classes = [CustomTokenAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes     = [IsUserPermission]
 
-    def post(self, request, notification_id):
+    def post(self, request):
+        ids = request.data.get('notification_ids')
+        now = timezone.now()
+
+        qs = UserNotification.objects.filter(user=request.user, is_read=False)
+        if ids:
+            qs = qs.filter(notification_id__in=ids)
+
+        updated = qs.update(is_read=True, read_at=now)
+        return Response({'message': f'{updated} notification(s) marked as read.'})
+
+
+class UserNotificationDeleteView(views.APIView):
+    """
+    DELETE /api/notifications/user/<notification_id>/
+    يحذف إشعاراً واحداً للمستخدم.
+    """
+    authentication_classes = [CustomTokenAuthentication]
+    permission_classes     = [IsUserPermission]
+
+    def delete(self, request, notification_id):
         try:
-            notif = UserNotification.objects.get(pk=notification_id, user=request.user)
-            notif.is_read = True
-            notif.read_at = timezone.now()
-            notif.save()
-            return Response({'message': 'Notification marked as read'})
+            notif = UserNotification.objects.get(
+                notification_id=notification_id,
+                user=request.user
+            )
+            notif.delete()
+            return Response({'message': 'Notification deleted.'}, status=status.HTTP_204_NO_CONTENT)
         except UserNotification.DoesNotExist:
-            return Response({'error': 'Notification not found'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'error': 'Notification not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+
+# ============================================================
+# DOCTOR NOTIFICATIONS
+# ============================================================
 
 class DoctorNotificationListView(generics.ListAPIView):
-    serializer_class = DoctorNotificationSerializer
+    """
+    GET /api/notifications/doctor/
+    يعيد قائمة الإشعارات الخاصة بالطبيب.
+    Query params:
+      ?unread=true  — إشعارات غير مقروءة فقط
+    """
     authentication_classes = [CustomTokenAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes     = [IsDoctorPermission]
 
     def get_queryset(self):
-        if not hasattr(self.request.user, 'doctor_id'):
-            return DoctorNotification.objects.none()
-        return DoctorNotification.objects.filter(doctor=self.request.user).order_by('-created_at')
+        qs = DoctorNotification.objects.filter(doctor=self.request.user).order_by('-created_at')
+        if self.request.query_params.get('unread') == 'true':
+            qs = qs.filter(is_read=False)
+        return qs[:50]
 
-class DoctorNotificationReadView(APIView):
+    def list(self, request, *args, **kwargs):
+        qs = self.get_queryset()
+        data = [
+            {
+                'notification_id':     n.notification_id,
+                'title':               n.title,
+                'body':                n.body,
+                'notification_type':   n.notification_type,
+                'related_entity_type': n.related_entity_type,
+                'related_entity_id':   n.related_entity_id,
+                'is_read':             n.is_read,
+                'created_at':          n.created_at,
+                'read_at':             n.read_at,
+            }
+            for n in qs
+        ]
+        unread_count = DoctorNotification.objects.filter(doctor=request.user, is_read=False).count()
+        return Response({'unread_count': unread_count, 'notifications': data})
+
+
+class DoctorNotificationMarkReadView(views.APIView):
+    """
+    POST /api/notifications/doctor/mark-read/
+    Body (optional): { "notification_ids": [1, 2, 3] }
+    """
     authentication_classes = [CustomTokenAuthentication]
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes     = [IsDoctorPermission]
 
-    def post(self, request, notification_id):
+    def post(self, request):
+        ids = request.data.get('notification_ids')
+        now = timezone.now()
+
+        qs = DoctorNotification.objects.filter(doctor=request.user, is_read=False)
+        if ids:
+            qs = qs.filter(notification_id__in=ids)
+
+        updated = qs.update(is_read=True, read_at=now)
+        return Response({'message': f'{updated} notification(s) marked as read.'})
+
+
+class DoctorNotificationDeleteView(views.APIView):
+    """
+    DELETE /api/notifications/doctor/<notification_id>/
+    """
+    authentication_classes = [CustomTokenAuthentication]
+    permission_classes     = [IsDoctorPermission]
+
+    def delete(self, request, notification_id):
         try:
-            if not hasattr(request.user, 'doctor_id'):
-                return Response({'error': 'Only doctors can access this'}, status=status.HTTP_403_FORBIDDEN)
-            notif = DoctorNotification.objects.get(pk=notification_id, doctor=request.user)
-            notif.is_read = True
-            notif.read_at = timezone.now()
-            notif.save()
-            return Response({'message': 'Notification marked as read'})
+            notif = DoctorNotification.objects.get(
+                notification_id=notification_id,
+                doctor=request.user
+            )
+            notif.delete()
+            return Response({'message': 'Notification deleted.'}, status=status.HTTP_204_NO_CONTENT)
         except DoctorNotification.DoesNotExist:
-            return Response({'error': 'Notification not found'}, status=status.HTTP_404_NOT_FOUND)
+            return Response({'error': 'Notification not found.'}, status=status.HTTP_404_NOT_FOUND)

@@ -12,11 +12,16 @@ class ChatbotConversationView(views.APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        # Get or create active conversation
-        conv, created = ChatbotConversation.objects.get_or_create(
+        conv = ChatbotConversation.objects.filter(
             user=request.user, 
             status='active'
-        )
+        ).order_by('-created_at').first()
+
+        if not conv:
+            conv = ChatbotConversation.objects.create(
+                user=request.user, 
+                status='active'
+            )
         serializer = ChatbotConversationSerializer(conv)
         return response.Response(serializer.data)
 

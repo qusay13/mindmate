@@ -12,7 +12,11 @@ const ClinicPage = () => {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [linking, setLinking] = useState(null);
-  const { user } = useAuth();
+  const [ratingModal, setRatingModal] = useState(null); // doctor object or null
+  const [ratingValue, setRatingValue] = useState(5);
+  const [ratingComment, setRatingComment] = useState('');
+  const [submittingRating, setSubmittingRating] = useState(false);
+  useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -43,6 +47,26 @@ const ClinicPage = () => {
       alert(err.response?.data?.error || 'Failed to connect with doctor');
     } finally {
       setLinking(null);
+    }
+  };
+
+  const submitRating = async () => {
+    if (!ratingModal) return;
+    setSubmittingRating(true);
+    try {
+      await clinicAPI.rateDoctor(ratingModal.doctor_id, {
+        score: ratingValue,
+        comment: ratingComment
+      });
+      alert('Thank you for your rating!');
+      setRatingModal(null);
+      setRatingComment('');
+      setRatingValue(5);
+      fetchDoctors(); // Refresh ratings
+    } catch (err) {
+      alert(err.response?.data?.error || 'Failed to submit rating. You can only rate doctors you are connected with.');
+    } finally {
+      setSubmittingRating(false);
     }
   };
 
@@ -104,7 +128,7 @@ const ClinicPage = () => {
                       padding: '0.2rem 0.6rem', borderRadius: '20px', fontSize: '0.75rem',
                       background: '#d29922' + '22', color: '#d29922', display: 'flex', alignItems: 'center', gap: 4
                     }}>
-                      <Star size={11} /> 4.9
+                      <Star size={11} /> {dr.average_rating || '0.0'} ({dr.ratings_count})
                     </span>
                     <span style={{
                       padding: '0.2rem 0.6rem', borderRadius: '20px', fontSize: '0.75rem',
@@ -112,14 +136,6 @@ const ClinicPage = () => {
                     }}>
                       <ShieldCheck size={11} /> Verified
                     </span>
-                    {dr.nationality && (
-                      <span style={{
-                        padding: '0.2rem 0.6rem', borderRadius: '20px', fontSize: '0.75rem',
-                        background: 'rgba(255,255,255,0.07)', color: '#aaa', display: 'flex', alignItems: 'center', gap: 4
-                      }}>
-                        <Globe size={11} /> {dr.nationality}
-                      </span>
-                    )}
                   </div>
                 </div>
               </div>
@@ -135,19 +151,19 @@ const ClinicPage = () => {
               <div style={{ display: 'flex', gap: '0.75rem', marginTop: 'auto' }}>
                 {dr.link_status === 'linked' ? (
                   <>
-                    <div style={{
-                      flex: 1, padding: '0.55rem 0.8rem', borderRadius: '10px',
-                      background: '#34d39922', color: '#34d399', display: 'flex',
-                      alignItems: 'center', justifyContent: 'center', gap: 6, fontSize: '0.85rem', fontWeight: 600
-                    }}>
-                      <CheckCircle2 size={15} /> Connected
-                    </div>
                     <button
                       className="btn-primary"
                       onClick={() => navigate('/chat')}
                       style={{ flex: 1, borderRadius: '10px', padding: '0.55rem 0.8rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6 }}
                     >
                       <MessageSquare size={15} /> Message
+                    </button>
+                    <button
+                      className="btn-primary"
+                      onClick={() => setRatingModal(dr)}
+                      style={{ flex: 1, borderRadius: '10px', padding: '0.55rem 0.8rem', fontSize: '0.85rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, background: 'rgba(210, 153, 34, 0.2)', color: '#d29922', border: '1px solid #d29922' }}
+                    >
+                      <Star size={15} /> Rate
                     </button>
                   </>
                 ) : dr.link_status === 'pending' ? (
@@ -181,6 +197,58 @@ const ClinicPage = () => {
               <p>No specialists found matching your search.</p>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Rating Modal */}
+      {ratingModal && (
+        <div className="modal-overlay" style={{
+          position: 'fixed', top: 0, left: 0, right: 0, bottom: 0,
+          background: 'rgba(0,0,0,0.8)', backdropFilter: 'blur(8px)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
+        }}>
+          <div className="glass-card fade-in" style={{ width: '90%', maxWidth: '400px', padding: '2rem' }}>
+            <h2 style={{ textAlign: 'center', marginBottom: '0.5rem' }}>Rate Dr. {ratingModal.full_name}</h2>
+            <p style={{ textAlign: 'center', color: '#888', marginBottom: '1.5rem', fontSize: '0.9rem' }}>Share your experience to help others.</p>
+            
+            <div style={{ display: 'flex', justifyContent: 'center', gap: '0.5rem', marginBottom: '1.5rem' }}>
+              {[1, 2, 3, 4, 5].map(v => (
+                <Star
+                  key={v}
+                  size={32}
+                  style={{ cursor: 'pointer', fill: v <= ratingValue ? '#d29922' : 'none', color: v <= ratingValue ? '#d29922' : '#555' }}
+                  onClick={() => setRatingValue(v)}
+                />
+              ))}
+            </div>
+
+            <textarea
+              className="input-field"
+              placeholder="Add a comment (optional)..."
+              value={ratingComment}
+              onChange={(e) => setRatingComment(e.target.value)}
+              rows="4"
+              style={{ width: '100%', marginBottom: '1.5rem', background: 'rgba(255,255,255,0.05)', borderRadius: '12px', padding: '1rem' }}
+            />
+
+            <div style={{ display: 'flex', gap: '1rem' }}>
+              <button
+                className="btn-primary"
+                onClick={() => setRatingModal(null)}
+                style={{ flex: 1, background: 'rgba(255,255,255,0.1)', color: '#fff' }}
+              >
+                Cancel
+              </button>
+              <button
+                className="btn-primary"
+                onClick={submitRating}
+                disabled={submittingRating}
+                style={{ flex: 1 }}
+              >
+                {submittingRating ? 'Submitting...' : 'Submit Rating'}
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

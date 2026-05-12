@@ -11,6 +11,8 @@ const ChatPage = () => {
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(true);
   const [sendingMsg, setSendingMsg] = useState(false);
+  const [isOtherTyping, setIsOtherTyping] = useState(false);
+  const [typingTimeout, setTypingTimeout] = useState(null);
   const wsRef = useRef(null);
   const messagesEndRef = useRef(null);
   const token = localStorage.getItem('mindmate_token');
@@ -24,7 +26,7 @@ const ChatPage = () => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
     }
-  }, [messages]);
+  }, [messages, isOtherTyping]);
 
   const fetchConversations = async () => {
     try {
@@ -40,11 +42,20 @@ const ChatPage = () => {
   const openConversation = async (conv) => {
     setSelectedConv(conv);
     setMessages([]);
+    setIsOtherTyping(false);
 
     // Load history
     try {
       const res = await chatAPI.getMessages(conv.id);
       setMessages(res.data);
+      
+      // Mark last messages as read if they are not mine
+      if (res.data.length > 0) {
+        const lastMsg = res.data[res.data.length - 1];
+        if (!isMine(lastMsg) && !lastMsg.is_seen) {
+           // We'll send read receipts after websocket is open (handled in ws.onopen)
+        }
+      }
     } catch (err) {
       console.error('Failed to load messages', err);
     }
@@ -54,17 +65,42 @@ const ChatPage = () => {
 
     // Open WebSocket
     const ws = new WebSocket(`${WS_BASE_URL}chat/${conv.id}/?token=${token}`);
-    ws.onopen = () => console.log('WebSocket connected');
+    ws.onopen = () => {
+      console.log('WebSocket connected');
+      // Send read receipts for all unread messages from other party
+      setMessages(prev => {
+        prev.filter(m => !isMine(m) && !m.is_seen).forEach(m => {
+          ws.send(JSON.stringify({ type: 'read_receipt', message_id: m.id }));
+        });
+        return prev;
+      });
+    };
     ws.onmessage = (e) => {
       const data = JSON.parse(e.data);
-      setMessages(prev => [...prev, {
-        id: data.id,
-        sender_type: data.sender_type,
-        sender_id: data.sender_id,
-        content: data.message,
-        created_at: data.created_at,
-        is_seen: false,
-      }]);
+      
+      if (data.type === 'message') {
+        setMessages(prev => [...prev, {
+          id: data.id,
+          sender_type: data.sender_type,
+          sender_id: data.sender_id,
+          content: data.message,
+          created_at: data.created_at,
+          is_seen: false,
+        }]);
+        
+        // If message is from other party, send read receipt
+        const myId = getMyId();
+        const myRole = getMyRole();
+        if (!(data.sender_type === myRole && String(data.sender_id) === String(myId))) {
+          ws.send(JSON.stringify({ type: 'read_receipt', message_id: data.id }));
+        }
+      } else if (data.type === 'typing') {
+        setIsOtherTyping(data.is_typing);
+      } else if (data.type === 'read_receipt') {
+        setMessages(prev => prev.map(m => 
+          m.id === data.message_id ? { ...m, is_seen: true } : m
+        ));
+      }
     };
     ws.onerror = (e) => console.error('WebSocket error', e);
     ws.onclose = () => console.log('WebSocket closed');
@@ -75,11 +111,32 @@ const ChatPage = () => {
     if (!newMessage.trim() || !wsRef.current) return;
     setSendingMsg(true);
     try {
-      wsRef.current.send(JSON.stringify({ message: newMessage.trim() }));
+      wsRef.current.send(JSON.stringify({ type: 'message', message: newMessage.trim() }));
       setNewMessage('');
+      // Stop typing status immediately when sending
+      sendTypingStatus(false);
     } finally {
       setSendingMsg(false);
     }
+  };
+
+  const sendTypingStatus = (isTyping) => {
+    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
+      wsRef.current.send(JSON.stringify({ type: 'typing', is_typing: isTyping }));
+    }
+  };
+
+  const handleInputChange = (e) => {
+    setNewMessage(e.target.value);
+
+    // Typing indicator logic
+    if (typingTimeout) clearTimeout(typingTimeout);
+    
+    sendTypingStatus(true);
+    
+    setTypingTimeout(setTimeout(() => {
+      sendTypingStatus(false);
+    }, 2000));
   };
 
   const handleKeyDown = (e) => {
@@ -94,9 +151,15 @@ const ChatPage = () => {
     return user.user_id || user.doctor_id;
   };
 
+  const getMyRole = () => {
+    if (!user) return null;
+    return user.role === 'user' ? 'user' : 'doctor';
+  };
+
   const isMine = (msg) => {
-    const myRole = user?.role;
-    return msg.sender_type === myRole || msg.sender_type === (myRole === 'user' ? 'user' : 'doctor');
+    const myId   = getMyId();
+    const myRole = getMyRole();
+    return msg.sender_type === myRole && String(msg.sender_id) === String(myId);
   };
 
   if (loading) return (
@@ -239,14 +302,50 @@ const ChatPage = () => {
                       wordBreak: 'break-word',
                     }}>
                       {msg.content}
-                      <div style={{ fontSize: '0.7rem', marginTop: '0.3rem', opacity: 0.6, textAlign: 'right' }}>
+                      <div style={{ 
+                        fontSize: '0.7rem', 
+                        marginTop: '0.3rem', 
+                        opacity: 0.7, 
+                        textAlign: 'right',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'flex-end',
+                        gap: '4px'
+                      }}>
                         {new Date(msg.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        {mine && msg.is_seen && ' ✓✓'}
+                        {mine && (
+                          <span style={{ color: msg.is_seen ? '#4ade80' : 'rgba(255,255,255,0.5)' }}>
+                            {msg.is_seen ? '✓✓' : '✓'}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </div>
                 );
               })}
+              
+              {isOtherTyping && (
+                <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
+                  <div style={{
+                    padding: '0.65rem 1rem',
+                    borderRadius: '16px 16px 16px 4px',
+                    background: 'rgba(255,255,255,0.05)',
+                    color: '#888',
+                    fontSize: '0.8rem',
+                    fontStyle: 'italic',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}>
+                    <div className="typing-dot-container">
+                      <div className="typing-dot"></div>
+                      <div className="typing-dot"></div>
+                      <div className="typing-dot"></div>
+                    </div>
+                    {selectedConv.other_party?.name} is typing...
+                  </div>
+                </div>
+              )}
               <div ref={messagesEndRef} />
             </div>
 
@@ -261,7 +360,7 @@ const ChatPage = () => {
             }}>
               <textarea
                 value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
+                onChange={handleInputChange}
                 onKeyDown={handleKeyDown}
                 placeholder="Type a message... (Enter to send)"
                 rows={1}

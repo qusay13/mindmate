@@ -16,11 +16,7 @@ const PatientDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  useEffect(() => {
-    fetchPatientData();
-  }, [id]);
-
-  const fetchPatientData = async () => {
+  const fetchPatientData = React.useCallback(async () => {
     try {
       setLoading(true);
       const [detailRes, moodRes, journalRes, analysisRes] = await Promise.all([
@@ -40,7 +36,11 @@ const PatientDetailPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [id]);
+
+  useEffect(() => {
+    fetchPatientData();
+  }, [fetchPatientData]);
 
   if (loading) return (
     <div className="loading-screen">

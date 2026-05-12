@@ -1,19 +1,14 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 import { authAPI } from '../services/api';
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
+  const [user, setUser] = useState(() => {
     const savedUser = localStorage.getItem('mindmate_user');
-    if (savedUser) {
-      setUser(JSON.parse(savedUser));
-    }
-    setLoading(false);
-  }, []);
+    return savedUser ? JSON.parse(savedUser) : null;
+  });
+  const [loading] = useState(false);
 
   const login = async (credentials) => {
     const response = await authAPI.login(credentials);
@@ -34,11 +29,18 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  const updateUser = (updates) => {
+    const updated = { ...user, ...updates };
+    localStorage.setItem('mindmate_user', JSON.stringify(updated));
+    setUser(updated);
+  };
+
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, logout, loading, updateUser }}>
       {children}
     </AuthContext.Provider>
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export const useAuth = () => useContext(AuthContext);

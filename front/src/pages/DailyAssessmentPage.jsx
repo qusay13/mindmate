@@ -94,16 +94,21 @@ const DailyAssessmentPage = () => {
                   <div className="stat-label">Total Score</div>
                 </div>
                 <div className="stat-box">
-                  <div className="stat-value" style={{ fontSize: '16px' }}>{result.severity_level}</div>
+                  <div className="stat-value" style={{ fontSize: '16px', textTransform: 'capitalize' }}>
+                    {result.severity_level?.replace(/_/g, ' ')}
+                  </div>
                   <div className="stat-label">Severity</div>
                 </div>
               </div>
             </div>
           )}
           <p style={{ color: 'var(--text-secondary)', marginBottom: '24px', fontSize: '14px' }}>
-            Your daily progress has been updated. Results are now reflected in your analysis.
+            Your daily progress has been updated. Check your Analysis page for AI doctor recommendations.
           </p>
-          <button className="btn-primary" onClick={() => navigate('/')}>Back to Dashboard</button>
+          <div style={{ display: 'flex', gap: '0.75rem', justifyContent: 'center', flexWrap: 'wrap' }}>
+            <button className="btn-primary" onClick={() => navigate('/')}>Back to Dashboard</button>
+            <button className="btn-secondary" onClick={() => navigate('/analysis')}>View Analysis</button>
+          </div>
         </div>
       </div>
     );

@@ -5,6 +5,7 @@ import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
+import DoctorRegisterPage from './pages/DoctorRegisterPage';
 import Dashboard from './pages/Dashboard';
 import SurveyPage from './pages/SurveyPage';
 import ClinicPage from './pages/ClinicPage';
@@ -15,17 +16,27 @@ import DoctorDashboard from './pages/DoctorDashboard';
 import ChatPage from './pages/ChatPage';
 import PatientDetailPage from './pages/PatientDetailPage';
 import ChatbotPage from './pages/ChatbotPage';
+import JournalHistoryPage from './pages/JournalHistoryPage';
+import ProfileEditPage from './pages/ProfileEditPage';
+import DoctorProfileEditPage from './pages/DoctorProfileEditPage';
 
-
-const ProtectedRoute = ({ children }) => {
+const ProtectedRoute = ({ children, requireSurvey = true }) => {
   const { user, loading } = useAuth();
+  
   if (loading) return (
     <div className="loading-screen">
       <div className="loader"></div>
       <p>Loading...</p>
     </div>
   );
+  
   if (!user) return <Navigate to="/login" />;
+
+  // Enforce initial survey for patients
+  if (requireSurvey && user.role === 'user' && !user.initial_survey_completed) {
+    return <Navigate to="/survey" />;
+  }
+
   return children;
 };
 
@@ -41,6 +52,7 @@ const AppContent = () => {
           <Routes>
             <Route path="/login" element={!user ? <LoginPage /> : <Navigate to="/" />} />
             <Route path="/register" element={!user ? <RegisterPage /> : <Navigate to="/" />} />
+            <Route path="/doctor/register" element={!user ? <DoctorRegisterPage /> : <Navigate to="/" />} />
             <Route path="/" element={
               <ProtectedRoute>
                 {user?.role === 'admin' ? <AdminDashboard />
@@ -52,9 +64,13 @@ const AppContent = () => {
             <Route path="/chat" element={<ProtectedRoute><ChatPage /></ProtectedRoute>} />
             <Route path="/chatbot" element={<ProtectedRoute><ChatbotPage /></ProtectedRoute>} />
             <Route path="/analysis" element={<ProtectedRoute><AnalysisPage /></ProtectedRoute>} />
-            <Route path="/survey" element={<ProtectedRoute><SurveyPage /></ProtectedRoute>} />
+            {/* Survey does not require the survey to be completed to view it */}
+            <Route path="/survey" element={<ProtectedRoute requireSurvey={false}><SurveyPage /></ProtectedRoute>} />
             <Route path="/clinic" element={<ProtectedRoute><ClinicPage /></ProtectedRoute>} />
             <Route path="/assessment/:code" element={<ProtectedRoute><DailyAssessmentPage /></ProtectedRoute>} />
+            <Route path="/journal-history" element={<ProtectedRoute><JournalHistoryPage /></ProtectedRoute>} />
+            <Route path="/profile/edit" element={<ProtectedRoute><ProfileEditPage /></ProtectedRoute>} />
+            <Route path="/profile/doctor" element={<ProtectedRoute><DoctorProfileEditPage /></ProtectedRoute>} />
           </Routes>
         </div>
       </div>

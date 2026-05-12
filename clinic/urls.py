@@ -12,7 +12,9 @@ from .views import (
     DoctorPatientJournalHistoryView,
     DoctorPatientAnalysisListView,
     DoctorPatientRequestListView,
-    DoctorRequestActionView
+    DoctorRequestActionView,
+    DoctorRatingListView,
+    SuggestDoctorView
 )
 
 urlpatterns = [
@@ -29,4 +31,6 @@ urlpatterns = [
     path('doctor/patients/<uuid:patient_id>/analysis/', DoctorPatientAnalysisListView.as_view(), name='doctor-patient-analysis'),
     path('doctor/requests/', DoctorPatientRequestListView.as_view(), name='doctor-requests'),
     path('doctor/requests/<int:request_id>/action/', DoctorRequestActionView.as_view(), name='doctor-request-action'),
+    path('doctors/<uuid:doctor_id>/ratings/', DoctorRatingListView.as_view(), name='doctor-ratings'),
+    path('suggest-doctor/', SuggestDoctorView.as_view(), name='suggest-doctor'),
 ]
