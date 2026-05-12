@@ -2,10 +2,12 @@ import logging
 import random
 from django.db import transaction
 from django.utils import timezone
-from rest_framework import status, views, permissions, generics
+from rest_framework import status, views, permissions, generics, serializers
 from rest_framework.response import Response
 from rest_framework.throttling import UserRateThrottle
 from accounts.authentication import CustomTokenAuthentication
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
+from drf_spectacular.types import OpenApiTypes
 from .models import (
     DailyMoodEntry, JournalEntry, DailyProgress,
     QuestionnaireSession, QuestionnaireAnswer, QuestionnaireQuestion,
@@ -93,6 +95,7 @@ class DailyMoodView(views.APIView):
     permission_classes = [permissions.IsAuthenticated]
     throttle_classes = [UserRateThrottle]
 
+    @extend_schema(responses={200: DailyMoodSerializer})
     def get(self, request):
         today = timezone.localdate()
         mood = DailyMoodEntry.objects.filter(user=request.user, recorded_date=today).first()
@@ -100,6 +103,7 @@ class DailyMoodView(views.APIView):
             return Response(DailyMoodSerializer(mood).data, status=status.HTTP_200_OK)
         return Response({'detail': 'No mood recorded for today.'}, status=status.HTTP_404_NOT_FOUND)
 
+    @extend_schema(request=DailyMoodSerializer, responses={200: DailyMoodSerializer})
     def post(self, request):
         serializer = DailyMoodSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -140,6 +144,7 @@ class DailyJournalView(views.APIView):
     permission_classes = [permissions.IsAuthenticated]
     throttle_classes = [UserRateThrottle]
 
+    @extend_schema(responses={200: JournalEntrySerializer})
     def get(self, request):
         today = timezone.localdate()
         journal = JournalEntry.objects.filter(user=request.user, entry_date=today).first()
@@ -147,6 +152,7 @@ class DailyJournalView(views.APIView):
             return Response(JournalEntrySerializer(journal).data, status=status.HTTP_200_OK)
         return Response({'detail': 'No journal recorded for today.'}, status=status.HTTP_404_NOT_FOUND)
 
+    @extend_schema(request=JournalEntrySerializer, responses={200: JournalEntrySerializer})
     def post(self, request):
         serializer = JournalEntrySerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -179,11 +185,18 @@ class DailyProgressView(views.APIView):
     authentication_classes = [CustomTokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(responses={200: DailyProgressSerializer})
     def get(self, request):
         today = timezone.localdate()
         progress = get_or_create_daily_progress(request.user, today)
         return Response(DailyProgressSerializer(progress).data, status=status.HTTP_200_OK)
 
+
+class SubmitQuestionnaireResponseSerializer(serializers.Serializer):
+    message = serializers.CharField()
+    total_score = serializers.IntegerField()
+    severity_level = serializers.CharField()
+    suggested_doctor = OpenApiTypes.OBJECT # Can be further detailed if needed
 
 class SubmitQuestionnaireView(views.APIView):
     authentication_classes = [CustomTokenAuthentication]
@@ -200,6 +213,11 @@ class SubmitQuestionnaireView(views.APIView):
         label_ar, key = classify_questionnaire_severity(total_score, q_type.code.replace('-', ''))
         return key
 
+    @extend_schema(
+        request=SubmitQuestionnaireSerializer,
+        responses={201: SubmitQuestionnaireResponseSerializer},
+        description="Submit questionnaire answers and receive severity analysis and AI doctor suggestion."
+    )
     def post(self, request):
         serializer = SubmitQuestionnaireSerializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -303,6 +321,10 @@ class ComprehensiveAnalysisView(views.APIView):
     permission_classes = [permissions.IsAuthenticated]
     throttle_classes = [UserRateThrottle]
 
+    @extend_schema(
+        responses={200: OpenApiTypes.OBJECT},
+        description="Returns a comprehensive 30-day mental health analysis, including score history, patterns, and recommendations."
+    )
     def get(self, request):
         from .services.analysis_service import AnalysisService
         from django.core.cache import cache

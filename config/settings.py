@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'notifications',
     'chat',
     'rest_framework',
+    'drf_spectacular',
     'corsheaders',
     'channels',
 ]
@@ -196,8 +197,18 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_THROTTLE_RATES': {
         'user': '100/minute',
-    }
+    },
+    'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+}
 
+SPECTACULAR_SETTINGS = {
+    'TITLE': 'MindMate API',
+    'DESCRIPTION': 'Professional Mental Health Platform API for Mobile and Web',
+    'VERSION': '1.0.0',
+    'SERVE_INCLUDE_SCHEMA': False,
+    # Standard security scheme for Token Auth
+    'COMPONENT_SPLIT_PATCH': True,
+    'COMPONENT_SPLIT_REQUEST': True,
 }
 
 # CORS — التحكم بالأصول المسموح لها بالوصول

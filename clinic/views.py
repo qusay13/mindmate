@@ -1,5 +1,7 @@
 from rest_framework import status, views, permissions, generics
 from rest_framework.response import Response
+from drf_spectacular.utils import extend_schema
+from drf_spectacular.types import OpenApiTypes
 from django.db import transaction
 from django.utils import timezone
 from .models import DoctorPatientRelationship, DoctorPatientRequest, DoctorRating
@@ -383,6 +385,10 @@ class SuggestDoctorView(views.APIView):
         'normal': 0,
     }
 
+    @extend_schema(
+        responses={200: OpenApiTypes.OBJECT},
+        description="Returns a suggested doctor based on the user's most severe recent questionnaire results."
+    )
     def get(self, request):
         if not hasattr(request.user, 'user_id'):
             return Response({'detail': 'Only patients can get suggestions.'}, status=403)

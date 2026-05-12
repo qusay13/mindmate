@@ -8,6 +8,8 @@ from accounts.authentication import CustomTokenAuthentication
 from .models import InitialSurveyQuestion, InitialSurveyResponse
 from .serializers import InitialSurveyQuestionSerializer, SubmitSurveySerializer
 from tracking.models import DailyProgress
+from drf_spectacular.utils import extend_schema
+from drf_spectacular.types import OpenApiTypes
 
 logger = logging.getLogger(__name__)
 
@@ -25,6 +27,11 @@ class SubmitSurveyView(views.APIView):
     permission_classes = [permissions.IsAuthenticated]
     throttle_classes = [UserRateThrottle]
 
+    @extend_schema(
+        request=SubmitSurveySerializer,
+        responses={201: OpenApiTypes.OBJECT},
+        description="Submit the initial onboarding survey responses."
+    )
     def post(self, request):
         serializer = SubmitSurveySerializer(data=request.data)
         serializer.is_valid(raise_exception=True)

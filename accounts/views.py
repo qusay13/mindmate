@@ -2,7 +2,7 @@ import hashlib
 import secrets
 from datetime import timedelta
 from django.utils import timezone
-from rest_framework import status, views, permissions, generics
+from rest_framework import status, views, permissions, generics, serializers
 from rest_framework.response import Response
 from .serializers import (
     UserRegistrationSerializer, DoctorRegistrationSerializer,
@@ -10,6 +10,8 @@ from .serializers import (
 )
 from .models import User, Doctor, Admin, UserSession
 from .authentication import CustomTokenAuthentication
+from drf_spectacular.utils import extend_schema, OpenApiParameter, OpenApiExample
+from drf_spectacular.types import OpenApiTypes
 
 
 # ============================================================
@@ -19,6 +21,10 @@ from .authentication import CustomTokenAuthentication
 class UserRegistrationView(views.APIView):
     permission_classes = [permissions.AllowAny]
 
+    @extend_schema(
+        responses={201: OpenApiTypes.OBJECT},
+        description="Register a new patient user."
+    )
     def post(self, request):
         serializer = UserRegistrationSerializer(data=request.data)
         if serializer.is_valid():
@@ -38,6 +44,15 @@ class DoctorRegistrationView(views.APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
+# Documentation Serializer (not for DB)
+class LoginResponseSerializer(serializers.Serializer):
+    token = serializers.CharField()
+    expires_at = serializers.DateTimeField()
+    role = serializers.CharField()
+    user = UserSerializer(required=False)
+    doctor = DoctorSerializer(required=False)
+    admin = AdminSerializer(required=False)
+
 # ============================================================
 # LOGIN / LOGOUT
 # ============================================================
@@ -45,6 +60,11 @@ class DoctorRegistrationView(views.APIView):
 class LoginView(views.APIView):
     permission_classes = [permissions.AllowAny]
 
+    @extend_schema(
+        request=LoginSerializer,
+        responses={200: LoginResponseSerializer},
+        description="Authenticate user and return a session token with profile data."
+    )
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
         if not serializer.is_valid():
@@ -443,12 +463,14 @@ class UserProfileUpdateView(views.APIView):
     authentication_classes = [CustomTokenAuthentication]
     permission_classes = [permissions.IsAuthenticated]
 
+    @extend_schema(responses={200: UserSerializer})
     def get(self, request):
         if not hasattr(request.user, 'user_id'):
             return Response({'error': 'Only patients can access this endpoint'}, status=403)
         serializer = UserSerializer(request.user)
         return Response(serializer.data)
 
+    @extend_schema(request=UserSerializer, responses={200: UserSerializer})
     def patch(self, request):
         if not hasattr(request.user, 'user_id'):
             return Response({'error': 'Only patients can access this endpoint'}, status=403)

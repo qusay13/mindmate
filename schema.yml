@@ -1,0 +1,1651 @@
+openapi: 3.0.3
+info:
+  title: MindMate API
+  version: 1.0.0
+  description: Professional Mental Health Platform API for Mobile and Web
+paths:
+  /api/accounts/admin/doctors/{doctor_id}/deactivate/:
+    post:
+      operationId: accounts_admin_doctors_deactivate_create
+      parameters:
+      - in: path
+        name: doctor_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - accounts
+      responses:
+        '200':
+          description: No response body
+  /api/accounts/admin/stats/:
+    get:
+      operationId: accounts_admin_stats_retrieve
+      description: |-
+        GET /api/accounts/admin/stats/
+        Returns general statistics for the admin dashboard.
+      tags:
+      - accounts
+      responses:
+        '200':
+          description: No response body
+  /api/accounts/admin/users/:
+    get:
+      operationId: accounts_admin_users_list
+      tags:
+      - accounts
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+          description: ''
+  /api/accounts/admin/users/{user_id}/deactivate/:
+    post:
+      operationId: accounts_admin_users_deactivate_create
+      parameters:
+      - in: path
+        name: user_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - accounts
+      responses:
+        '200':
+          description: No response body
+  /api/accounts/email/verify/confirm/:
+    post:
+      operationId: accounts_email_verify_confirm_create
+      description: |-
+        POST /api/accounts/email/verify/confirm/
+        Body: { "token": "..." }
+        يفعّل الحساب بعد التحقق من الـ token.
+      tags:
+      - accounts
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/accounts/email/verify/request/:
+    post:
+      operationId: accounts_email_verify_request_create
+      description: |-
+        POST /api/accounts/email/verify/request/
+        Body: { "email": "...", "role": "user" | "doctor" }
+        يرسل رابط تأكيد البريد الإلكتروني.
+      tags:
+      - accounts
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/accounts/login/:
+    post:
+      operationId: accounts_login_create
+      description: Authenticate user and return a session token with profile data.
+      tags:
+      - accounts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+        required: true
+      security:
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+          description: ''
+  /api/accounts/logout/:
+    post:
+      operationId: accounts_logout_create
+      tags:
+      - accounts
+      responses:
+        '200':
+          description: No response body
+  /api/accounts/password/reset/confirm/:
+    post:
+      operationId: accounts_password_reset_confirm_create
+      description: |-
+        POST /api/accounts/password/reset/confirm/
+        Body: { "token": "...", "new_password": "..." }
+        يضبط كلمة المرور الجديدة ويلغي جميع الجلسات.
+      tags:
+      - accounts
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/accounts/password/reset/request/:
+    post:
+      operationId: accounts_password_reset_request_create
+      description: |-
+        POST /api/accounts/password/reset/request/
+        Body: { "email": "...", "role": "user" | "doctor" }
+        يرسل رابط إعادة تعيين كلمة المرور.
+      tags:
+      - accounts
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/accounts/profile/doctor/:
+    get:
+      operationId: accounts_profile_doctor_retrieve
+      tags:
+      - accounts
+      responses:
+        '200':
+          description: No response body
+    patch:
+      operationId: accounts_profile_doctor_partial_update
+      tags:
+      - accounts
+      responses:
+        '200':
+          description: No response body
+  /api/accounts/profile/user/:
+    get:
+      operationId: accounts_profile_user_retrieve
+      tags:
+      - accounts
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+    patch:
+      operationId: accounts_profile_user_partial_update
+      tags:
+      - accounts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedUserRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedUserRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedUserRequest'
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+          description: ''
+  /api/accounts/register/doctor/:
+    post:
+      operationId: accounts_register_doctor_create
+      tags:
+      - accounts
+      security:
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/accounts/register/user/:
+    post:
+      operationId: accounts_register_user_create
+      description: Register a new patient user.
+      tags:
+      - accounts
+      security:
+      - {}
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/chat/conversations/:
+    get:
+      operationId: chat_conversations_list
+      tags:
+      - chat
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Conversation'
+          description: ''
+  /api/chat/conversations/{conversation_id}/messages/:
+    get:
+      operationId: chat_conversations_messages_list
+      parameters:
+      - in: path
+        name: conversation_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - chat
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Message'
+          description: ''
+  /api/chatbot/conversation/:
+    get:
+      operationId: chatbot_conversation_retrieve
+      tags:
+      - chatbot
+      responses:
+        '200':
+          description: No response body
+  /api/chatbot/message/:
+    post:
+      operationId: chatbot_message_create
+      tags:
+      - chatbot
+      responses:
+        '200':
+          description: No response body
+  /api/clinic/doctor/patients/:
+    get:
+      operationId: clinic_doctor_patients_list
+      tags:
+      - clinic
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Patient'
+          description: ''
+  /api/clinic/doctor/patients/{patient_id}/:
+    get:
+      operationId: clinic_doctor_patients_retrieve
+      parameters:
+      - in: path
+        name: patient_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - clinic
+      responses:
+        '200':
+          description: No response body
+  /api/clinic/doctor/patients/{patient_id}/analysis/:
+    get:
+      operationId: clinic_doctor_patients_analysis_list
+      parameters:
+      - in: path
+        name: patient_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - clinic
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/JournalAnalysis'
+          description: ''
+  /api/clinic/doctor/patients/{patient_id}/journals/:
+    get:
+      operationId: clinic_doctor_patients_journals_list
+      parameters:
+      - in: path
+        name: patient_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - clinic
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/JournalEntry'
+          description: ''
+  /api/clinic/doctor/patients/{patient_id}/mood/:
+    get:
+      operationId: clinic_doctor_patients_mood_list
+      parameters:
+      - in: path
+        name: patient_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - clinic
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DailyMood'
+          description: ''
+  /api/clinic/doctor/requests/:
+    get:
+      operationId: clinic_doctor_requests_list
+      tags:
+      - clinic
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DoctorPatientRequest'
+          description: ''
+  /api/clinic/doctor/requests/{request_id}/action/:
+    post:
+      operationId: clinic_doctor_requests_action_create
+      parameters:
+      - in: path
+        name: request_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - clinic
+      responses:
+        '200':
+          description: No response body
+  /api/clinic/doctors/{doctor_id}/:
+    get:
+      operationId: clinic_doctors_retrieve
+      parameters:
+      - in: path
+        name: doctor_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - clinic
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DoctorProfileLite'
+          description: ''
+  /api/clinic/doctors/{doctor_id}/approve/:
+    patch:
+      operationId: clinic_doctors_approve_partial_update
+      parameters:
+      - in: path
+        name: doctor_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - clinic
+      responses:
+        '200':
+          description: No response body
+  /api/clinic/doctors/{doctor_id}/contact/:
+    get:
+      operationId: clinic_doctors_contact_retrieve
+      parameters:
+      - in: path
+        name: doctor_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - clinic
+      responses:
+        '200':
+          description: No response body
+  /api/clinic/doctors/{doctor_id}/ratings/:
+    get:
+      operationId: clinic_doctors_ratings_list
+      parameters:
+      - in: path
+        name: doctor_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - clinic
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DoctorRating'
+          description: ''
+    post:
+      operationId: clinic_doctors_ratings_create
+      parameters:
+      - in: path
+        name: doctor_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - clinic
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DoctorRatingRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DoctorRatingRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DoctorRatingRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DoctorRating'
+          description: ''
+  /api/clinic/doctors/admin-list/:
+    get:
+      operationId: clinic_doctors_admin_list_list
+      tags:
+      - clinic
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DoctorProfileLite'
+          description: ''
+  /api/clinic/doctors/list/:
+    get:
+      operationId: clinic_doctors_list_list
+      tags:
+      - clinic
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/DoctorProfileLite'
+          description: ''
+  /api/clinic/link/:
+    post:
+      operationId: clinic_link_create
+      tags:
+      - clinic
+      responses:
+        '200':
+          description: No response body
+  /api/clinic/suggest-doctor/:
+    get:
+      operationId: clinic_suggest_doctor_retrieve
+      description: Returns a suggested doctor based on the user's most severe recent
+        questionnaire results.
+      tags:
+      - clinic
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/notifications/doctor/:
+    get:
+      operationId: notifications_doctor_retrieve
+      description: |-
+        GET /api/notifications/doctor/
+        يعيد قائمة الإشعارات الخاصة بالطبيب.
+        Query params:
+          ?unread=true  — إشعارات غير مقروءة فقط
+      tags:
+      - notifications
+      responses:
+        '200':
+          description: No response body
+  /api/notifications/doctor/{notification_id}/:
+    delete:
+      operationId: notifications_doctor_destroy
+      description: DELETE /api/notifications/doctor/<notification_id>/
+      parameters:
+      - in: path
+        name: notification_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - notifications
+      responses:
+        '204':
+          description: No response body
+  /api/notifications/doctor/mark-read/:
+    post:
+      operationId: notifications_doctor_mark_read_create
+      description: |-
+        POST /api/notifications/doctor/mark-read/
+        Body (optional): { "notification_ids": [1, 2, 3] }
+      tags:
+      - notifications
+      responses:
+        '200':
+          description: No response body
+  /api/notifications/user/:
+    get:
+      operationId: notifications_user_retrieve
+      description: |-
+        GET /api/notifications/user/
+        يعيد قائمة الإشعارات الخاصة بالمستخدم (الأحدث أولاً).
+        Query params:
+          ?unread=true  — إشعارات غير مقروءة فقط
+      tags:
+      - notifications
+      responses:
+        '200':
+          description: No response body
+  /api/notifications/user/{notification_id}/:
+    delete:
+      operationId: notifications_user_destroy
+      description: |-
+        DELETE /api/notifications/user/<notification_id>/
+        يحذف إشعاراً واحداً للمستخدم.
+      parameters:
+      - in: path
+        name: notification_id
+        schema:
+          type: integer
+        required: true
+      tags:
+      - notifications
+      responses:
+        '204':
+          description: No response body
+  /api/notifications/user/mark-read/:
+    post:
+      operationId: notifications_user_mark_read_create
+      description: |-
+        POST /api/notifications/user/mark-read/
+        Body (optional): { "notification_ids": [1, 2, 3] }
+        إذا لم يُرسَل الـ body يُعلَّم الكل مقروءاً.
+      tags:
+      - notifications
+      responses:
+        '200':
+          description: No response body
+  /api/survey/questions/:
+    get:
+      operationId: survey_questions_list
+      tags:
+      - survey
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/InitialSurveyQuestion'
+          description: ''
+  /api/survey/submit/:
+    post:
+      operationId: survey_submit_create
+      description: Submit the initial onboarding survey responses.
+      tags:
+      - survey
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitSurveyRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SubmitSurveyRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SubmitSurveyRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/tracking/analysis/:
+    get:
+      operationId: tracking_analysis_retrieve
+      description: Returns a comprehensive 30-day mental health analysis, including
+        score history, patterns, and recommendations.
+      tags:
+      - tracking
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/tracking/daily-tip/:
+    get:
+      operationId: tracking_daily_tip_retrieve
+      description: Fetches the daily tip generated when the user completed all 3 tasks
+        today.
+      tags:
+      - tracking
+      responses:
+        '200':
+          description: No response body
+  /api/tracking/journal/:
+    get:
+      operationId: tracking_journal_retrieve
+      tags:
+      - tracking
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JournalEntry'
+          description: ''
+    post:
+      operationId: tracking_journal_create
+      tags:
+      - tracking
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JournalEntryRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/JournalEntryRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/JournalEntryRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/JournalEntry'
+          description: ''
+  /api/tracking/journal/history/:
+    get:
+      operationId: tracking_journal_history_list
+      description: Returns the user's past journal entries.
+      tags:
+      - tracking
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/JournalEntry'
+          description: ''
+  /api/tracking/journal/sharing/:
+    get:
+      operationId: tracking_journal_sharing_retrieve
+      tags:
+      - tracking
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: tracking_journal_sharing_create
+      tags:
+      - tracking
+      responses:
+        '200':
+          description: No response body
+  /api/tracking/mood/:
+    get:
+      operationId: tracking_mood_retrieve
+      tags:
+      - tracking
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DailyMood'
+          description: ''
+    post:
+      operationId: tracking_mood_create
+      tags:
+      - tracking
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DailyMoodRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/DailyMoodRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/DailyMoodRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DailyMood'
+          description: ''
+  /api/tracking/progress/:
+    get:
+      operationId: tracking_progress_retrieve
+      tags:
+      - tracking
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DailyProgress'
+          description: ''
+  /api/tracking/questionnaires/:
+    get:
+      operationId: tracking_questionnaires_list
+      tags:
+      - tracking
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/QuestionnaireType'
+          description: ''
+  /api/tracking/questionnaires/{code}/questions/:
+    get:
+      operationId: tracking_questionnaires_questions_retrieve
+      parameters:
+      - in: path
+        name: code
+        schema:
+          type: string
+        required: true
+      tags:
+      - tracking
+      responses:
+        '200':
+          description: No response body
+  /api/tracking/questionnaires/submit/:
+    post:
+      operationId: tracking_questionnaires_submit_create
+      description: Submit questionnaire answers and receive severity analysis and
+        AI doctor suggestion.
+      tags:
+      - tracking
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SubmitQuestionnaireRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SubmitQuestionnaireRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SubmitQuestionnaireRequest'
+        required: true
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SubmitQuestionnaireResponse'
+          description: ''
+components:
+  schemas:
+    Admin:
+      type: object
+      properties:
+        admin_id:
+          type: string
+          format: uuid
+          readOnly: true
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        full_name:
+          type: string
+          nullable: true
+          maxLength: 150
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - admin_id
+      - created_at
+      - email
+    BlankEnum:
+      enum:
+      - ''
+    Conversation:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        last_message:
+          type: string
+          readOnly: true
+        other_party:
+          type: string
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - last_message
+      - other_party
+    DailyMood:
+      type: object
+      properties:
+        mood_id:
+          type: integer
+          readOnly: true
+        mood_level:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        mood_label:
+          readOnly: true
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/MoodLabelEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        reason_note:
+          type: string
+          nullable: true
+        recorded_date:
+          type: string
+          format: date
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - mood_id
+      - mood_label
+      - mood_level
+      - recorded_date
+    DailyMoodRequest:
+      type: object
+      properties:
+        mood_level:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        reason_note:
+          type: string
+          nullable: true
+      required:
+      - mood_level
+    DailyProgress:
+      type: object
+      properties:
+        progress_id:
+          type: integer
+          readOnly: true
+        progress_date:
+          type: string
+          format: date
+        completion:
+          type: string
+          readOnly: true
+        missing:
+          type: string
+          readOnly: true
+        completed:
+          type: string
+          readOnly: true
+        streak:
+          type: string
+          readOnly: true
+        mood_completed:
+          type: boolean
+        phq9_completed:
+          type: boolean
+        gad7_completed:
+          type: boolean
+        pss10_completed:
+          type: boolean
+        questionnaire_completed:
+          type: boolean
+        journal_completed:
+          type: boolean
+        all_completed:
+          type: boolean
+        tip_shown:
+          type: boolean
+      required:
+      - completed
+      - completion
+      - missing
+      - progress_id
+      - streak
+    Doctor:
+      type: object
+      properties:
+        doctor_id:
+          type: string
+          format: uuid
+          readOnly: true
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        full_name:
+          type: string
+          maxLength: 150
+        nationality:
+          type: string
+          nullable: true
+          maxLength: 100
+        specialization:
+          type: string
+          nullable: true
+          maxLength: 150
+        bio:
+          type: string
+          nullable: true
+        profile_image:
+          type: string
+          format: uri
+          nullable: true
+        cv_file_path:
+          type: string
+          format: uri
+          nullable: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/StatusE94Enum'
+          readOnly: true
+        is_active:
+          type: boolean
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - doctor_id
+      - email
+      - full_name
+      - is_active
+      - status
+    DoctorPatientRequest:
+      type: object
+      properties:
+        request_id:
+          type: integer
+          readOnly: true
+        user_id:
+          type: string
+          format: uuid
+          readOnly: true
+        user_name:
+          type: string
+          readOnly: true
+        user_email:
+          type: string
+          readOnly: true
+        request_type:
+          $ref: '#/components/schemas/RequestTypeEnum'
+        status:
+          $ref: '#/components/schemas/DoctorPatientStatusEnum'
+        requested_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - request_id
+      - request_type
+      - requested_at
+      - user_email
+      - user_id
+      - user_name
+    DoctorPatientStatusEnum:
+      enum:
+      - pending
+      - accepted
+      - rejected
+      type: string
+      description: |-
+        * `pending` - Pending
+        * `accepted` - Accepted
+        * `rejected` - Rejected
+    DoctorProfileLite:
+      type: object
+      properties:
+        doctor_id:
+          type: string
+          format: uuid
+          readOnly: true
+        full_name:
+          type: string
+          maxLength: 150
+        specialization:
+          type: string
+          nullable: true
+          maxLength: 150
+        nationality:
+          type: string
+          nullable: true
+          maxLength: 100
+        bio:
+          type: string
+          nullable: true
+        profile_image:
+          type: string
+          format: uri
+          nullable: true
+        whatsapp_number:
+          type: string
+          readOnly: true
+        is_whatsapp_visible:
+          type: boolean
+        status:
+          $ref: '#/components/schemas/StatusE94Enum'
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        link_status:
+          type: string
+          readOnly: true
+        average_rating:
+          type: string
+          readOnly: true
+        ratings_count:
+          type: string
+          readOnly: true
+        is_active:
+          type: boolean
+        cv_file_path:
+          type: string
+          format: uri
+          nullable: true
+      required:
+      - average_rating
+      - doctor_id
+      - email
+      - full_name
+      - link_status
+      - ratings_count
+      - whatsapp_number
+    DoctorRating:
+      type: object
+      properties:
+        rating_id:
+          type: integer
+          readOnly: true
+        doctor:
+          type: string
+          format: uuid
+          readOnly: true
+        user:
+          type: string
+          format: uuid
+          readOnly: true
+        user_name:
+          type: string
+          readOnly: true
+        score:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        comment:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - doctor
+      - rating_id
+      - score
+      - user
+      - user_name
+    DoctorRatingRequest:
+      type: object
+      properties:
+        score:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        comment:
+          type: string
+          nullable: true
+      required:
+      - score
+    GenderEnum:
+      enum:
+      - male
+      - female
+      - other
+      - prefer_not_to_say
+      type: string
+      description: |-
+        * `male` - Male
+        * `female` - Female
+        * `other` - Other
+        * `prefer_not_to_say` - Prefer not to say
+    InitialSurveyQuestion:
+      type: object
+      properties:
+        question_id:
+          type: integer
+          readOnly: true
+        question_text:
+          type: string
+        question_type:
+          $ref: '#/components/schemas/QuestionTypeEnum'
+        category:
+          type: string
+          nullable: true
+          maxLength: 50
+        options:
+          nullable: true
+        display_order:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+      required:
+      - display_order
+      - question_id
+      - question_text
+      - question_type
+    InitialSurveyResponseRequest:
+      type: object
+      properties:
+        question_id:
+          type: integer
+        answer_text:
+          type: string
+          nullable: true
+        answer_value:
+          type: number
+          format: double
+          nullable: true
+        score:
+          type: number
+          format: double
+          nullable: true
+      required:
+      - question_id
+    JournalAnalysis:
+      type: object
+      properties:
+        analysis_id:
+          type: integer
+          readOnly: true
+        detected_symptoms:
+          nullable: true
+        disorder_scores:
+          nullable: true
+        dominant_pattern:
+          type: string
+          nullable: true
+          maxLength: 100
+        raw_indicators:
+          nullable: true
+        analyzed_at:
+          type: string
+          format: date-time
+          readOnly: true
+        journal:
+          type: integer
+      required:
+      - analysis_id
+      - analyzed_at
+      - journal
+    JournalEntry:
+      type: object
+      properties:
+        journal_id:
+          type: integer
+          readOnly: true
+        content:
+          type: string
+        entry_date:
+          type: string
+          format: date
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - content
+      - created_at
+      - entry_date
+      - journal_id
+      - updated_at
+    JournalEntryRequest:
+      type: object
+      properties:
+        content:
+          type: string
+          minLength: 1
+      required:
+      - content
+    LoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+        password:
+          type: string
+          minLength: 1
+        role:
+          $ref: '#/components/schemas/RoleEnum'
+      required:
+      - email
+      - password
+      - role
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        expires_at:
+          type: string
+          format: date-time
+        role:
+          type: string
+        user:
+          $ref: '#/components/schemas/User'
+        doctor:
+          $ref: '#/components/schemas/Doctor'
+        admin:
+          $ref: '#/components/schemas/Admin'
+      required:
+      - expires_at
+      - role
+      - token
+    Message:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        sender_type:
+          $ref: '#/components/schemas/SenderTypeEnum'
+        sender_id:
+          type: string
+          format: uuid
+        content:
+          type: string
+        message_type:
+          $ref: '#/components/schemas/MessageTypeEnum'
+        is_seen:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        conversation:
+          type: string
+          format: uuid
+      required:
+      - conversation
+      - created_at
+      - id
+      - sender_id
+      - sender_type
+    MessageTypeEnum:
+      enum:
+      - TEXT
+      - IMAGE
+      - FILE
+      type: string
+      description: |-
+        * `TEXT` - Text
+        * `IMAGE` - Image
+        * `FILE` - File
+    MoodLabelEnum:
+      enum:
+      - very_bad
+      - bad
+      - neutral
+      - good
+      - very_good
+      type: string
+      description: |-
+        * `very_bad` - Very Bad
+        * `bad` - Bad
+        * `neutral` - Neutral
+        * `good` - Good
+        * `very_good` - Very Good
+    NullEnum:
+      enum:
+      - null
+    PatchedUserRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+          maxLength: 254
+        full_name:
+          type: string
+          nullable: true
+          maxLength: 150
+        date_of_birth:
+          type: string
+          format: date
+          nullable: true
+        gender:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/GenderEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        phone_number:
+          type: string
+          nullable: true
+          maxLength: 20
+        nationality:
+          type: string
+          nullable: true
+          maxLength: 100
+        profile_image:
+          type: string
+          format: binary
+          nullable: true
+        is_onboarded:
+          type: boolean
+        initial_survey_completed:
+          type: boolean
+    Patient:
+      type: object
+      properties:
+        user_id:
+          type: string
+          format: uuid
+          readOnly: true
+        full_name:
+          type: string
+          nullable: true
+          maxLength: 150
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        gender:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/GenderEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        nationality:
+          type: string
+          nullable: true
+          maxLength: 100
+        status:
+          type: string
+          readOnly: true
+      required:
+      - email
+      - status
+      - user_id
+    QuestionTypeEnum:
+      enum:
+      - multiple_choice
+      - scale
+      - text
+      - yes_no
+      type: string
+      description: |-
+        * `multiple_choice` - Multiple Choice
+        * `scale` - Scale
+        * `text` - Text
+        * `yes_no` - Yes / No
+    QuestionnaireAnswerRequest:
+      type: object
+      properties:
+        question_id:
+          type: integer
+        selected_option:
+          type: integer
+        score:
+          type: integer
+      required:
+      - question_id
+      - score
+      - selected_option
+    QuestionnaireType:
+      type: object
+      properties:
+        questionnaire_type_id:
+          type: integer
+          readOnly: true
+        code:
+          type: string
+          maxLength: 20
+        name:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+          nullable: true
+        max_score:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+        scoring_ranges:
+          nullable: true
+      required:
+      - code
+      - max_score
+      - name
+      - questionnaire_type_id
+    RequestTypeEnum:
+      enum:
+      - system_suggested
+      - user_selected
+      type: string
+      description: |-
+        * `system_suggested` - System Suggested
+        * `user_selected` - User Selected
+    RoleEnum:
+      enum:
+      - user
+      - doctor
+      - admin
+      type: string
+      description: |-
+        * `user` - user
+        * `doctor` - doctor
+        * `admin` - admin
+    SenderTypeEnum:
+      enum:
+      - user
+      - doctor
+      type: string
+      description: |-
+        * `user` - User
+        * `doctor` - Doctor
+    StatusE94Enum:
+      enum:
+      - pending
+      - approved
+      - rejected
+      type: string
+      description: |-
+        * `pending` - Pending
+        * `approved` - Approved
+        * `rejected` - Rejected
+    SubmitQuestionnaireRequest:
+      type: object
+      properties:
+        questionnaire_code:
+          type: string
+          minLength: 1
+        answers:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuestionnaireAnswerRequest'
+      required:
+      - answers
+      - questionnaire_code
+    SubmitQuestionnaireResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        total_score:
+          type: integer
+        severity_level:
+          type: string
+      required:
+      - message
+      - severity_level
+      - total_score
+    SubmitSurveyRequest:
+      type: object
+      properties:
+        responses:
+          type: array
+          items:
+            $ref: '#/components/schemas/InitialSurveyResponseRequest'
+      required:
+      - responses
+    User:
+      type: object
+      properties:
+        user_id:
+          type: string
+          format: uuid
+          readOnly: true
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        full_name:
+          type: string
+          nullable: true
+          maxLength: 150
+        date_of_birth:
+          type: string
+          format: date
+          nullable: true
+        gender:
+          nullable: true
+          oneOf:
+          - $ref: '#/components/schemas/GenderEnum'
+          - $ref: '#/components/schemas/BlankEnum'
+          - $ref: '#/components/schemas/NullEnum'
+        phone_number:
+          type: string
+          nullable: true
+          maxLength: 20
+        nationality:
+          type: string
+          nullable: true
+          maxLength: 100
+        profile_image:
+          type: string
+          format: uri
+          nullable: true
+        is_active:
+          type: boolean
+          readOnly: true
+        is_onboarded:
+          type: boolean
+        initial_survey_completed:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - email
+      - is_active
+      - user_id
