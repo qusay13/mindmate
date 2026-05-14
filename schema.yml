@@ -153,18 +153,40 @@ paths:
   /api/accounts/profile/doctor/:
     get:
       operationId: accounts_profile_doctor_retrieve
+      description: |-
+        GET /api/accounts/profile/doctor/
+        يعيد بيانات الملف الشخصي للطبيب المسجّل.
       tags:
       - accounts
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Doctor'
+          description: Doctor profile data
     patch:
       operationId: accounts_profile_doctor_partial_update
+      description: |-
+        PATCH /api/accounts/profile/doctor/
+        يحدّث بيانات الملف الشخصي للطبيب (specialization, bio, whatsapp_number, ...).
       tags:
       - accounts
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedDoctorRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedDoctorRequest'
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Doctor'
+          description: Doctor profile updated
   /api/accounts/profile/user/:
     get:
       operationId: accounts_profile_user_retrieve
@@ -202,13 +224,16 @@ paths:
   /api/accounts/register/doctor/:
     post:
       operationId: accounts_register_doctor_create
+      description: |-
+        POST /api/accounts/register/doctor/
+        يسجّل حساب طبيب جديد. يعيد رسالة تأكيد بعد إرسال بريد التحقق.
       tags:
       - accounts
       security:
       - {}
       responses:
-        '200':
-          description: No response body
+        '201':
+          description: Doctor registered successfully. Verification email sent.
   /api/accounts/register/user/:
     post:
       operationId: accounts_register_user_create
@@ -271,11 +296,25 @@ paths:
   /api/chatbot/message/:
     post:
       operationId: chatbot_message_create
+      description: |-
+        POST /api/chatbot/message/
+        Body: { "message": "نص الرسالة" }
+        يرسل رسالة للـ AI ويعيد رد الـ bot فوراً.
       tags:
       - chatbot
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatbotMessageRequest'
+        required: true
       responses:
-        '200':
-          description: No response body
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatbotMessageResponse'
+          description: Message sent — returns user message and bot reply
   /api/clinic/doctor/patients/:
     get:
       operationId: clinic_doctor_patients_list
@@ -385,6 +424,10 @@ paths:
   /api/clinic/doctor/requests/{request_id}/action/:
     post:
       operationId: clinic_doctor_requests_action_create
+      description: |-
+        POST /api/clinic/doctor/requests/{request_id}/action/
+        Body: { "action": "accept" | "reject" }
+        يقبل أو يرفض الطبيب طلب الربط من المريض.
       parameters:
       - in: path
         name: request_id
@@ -393,9 +436,22 @@ paths:
         required: true
       tags:
       - clinic
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DoctorRequestActionRequest'
+        required: true
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+          description: Action performed successfully
   /api/clinic/doctors/{doctor_id}/:
     get:
       operationId: clinic_doctors_retrieve
@@ -527,11 +583,30 @@ paths:
   /api/clinic/link/:
     post:
       operationId: clinic_link_create
+      description: |-
+        POST /api/clinic/link/
+        Body: { "doctor_id": "<uuid>", "request_type": "user_selected" }
+        يرسل المريض طلب ربط إلى الطبيب. يبقى الطلب بحالة pending حتى يوافق الطبيب.
       tags:
       - clinic
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatientDoctorLinkRequest'
+        required: true
       responses:
-        '200':
-          description: No response body
+        '201':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  request_id:
+                    type: integer
+          description: Link request sent successfully
   /api/clinic/suggest-doctor/:
     get:
       operationId: clinic_suggest_doctor_retrieve
@@ -746,18 +821,49 @@ paths:
   /api/tracking/journal/sharing/:
     get:
       operationId: tracking_journal_sharing_retrieve
+      description: |-
+        GET /api/tracking/journal/sharing/
+        يعيد حالة إذن المشاركة الحالية للمجلة مع الطبيب.
       tags:
       - tracking
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  share_full_journal:
+                    type: boolean
+                  share_analysis_only:
+                    type: boolean
+          description: Current sharing permission state
     post:
       operationId: tracking_journal_sharing_create
+      description: |-
+        POST /api/tracking/journal/sharing/
+        Body: { "share_full_journal": true | false }
+        يضبط إذن مشاركة المجلة الكاملة مع الطبيب المرتبط.
       tags:
       - tracking
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/JournalSharingRequest'
+        required: true
       responses:
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  share_full_journal:
+                    type: boolean
+          description: Sharing permission updated
   /api/tracking/mood/:
     get:
       operationId: tracking_mood_retrieve
@@ -1649,3 +1755,114 @@ components:
       - email
       - is_active
       - user_id
+    PatientDoctorLinkRequest:
+      type: object
+      properties:
+        doctor_id:
+          type: string
+          format: uuid
+          description: UUID of the approved doctor to link with
+        request_type:
+          type: string
+          enum:
+          - user_selected
+          - system_suggested
+          default: user_selected
+          description: How the link was initiated
+      required:
+      - doctor_id
+    DoctorRequestActionRequest:
+      type: object
+      properties:
+        action:
+          type: string
+          enum:
+          - accept
+          - reject
+          description: accept = approve the link request, reject = decline it
+      required:
+      - action
+    ChatbotMessageRequest:
+      type: object
+      properties:
+        message:
+          type: string
+          minLength: 1
+          description: The user's message text to send to the AI chatbot
+      required:
+      - message
+    ChatbotMessageResponse:
+      type: object
+      properties:
+        user_message:
+          type: object
+          properties:
+            id:
+              type: integer
+            sender:
+              type: string
+              enum: [user, bot]
+            content:
+              type: string
+            sent_at:
+              type: string
+              format: date-time
+        bot_message:
+          type: object
+          properties:
+            id:
+              type: integer
+            sender:
+              type: string
+              enum: [user, bot]
+            content:
+              type: string
+            sent_at:
+              type: string
+              format: date-time
+      required:
+      - user_message
+      - bot_message
+    JournalSharingRequest:
+      type: object
+      properties:
+        share_full_journal:
+          type: boolean
+          description: 'true = share full journal entries with linked doctor, false = revoke access'
+      required:
+      - share_full_journal
+    PatchedDoctorRequest:
+      type: object
+      properties:
+        full_name:
+          type: string
+          maxLength: 150
+        specialization:
+          type: string
+          nullable: true
+          maxLength: 150
+        nationality:
+          type: string
+          nullable: true
+          maxLength: 100
+        bio:
+          type: string
+          nullable: true
+        whatsapp_number:
+          type: string
+          nullable: true
+          maxLength: 20
+        is_whatsapp_visible:
+          type: boolean
+        profile_image:
+          type: string
+          format: binary
+          nullable: true
+  securitySchemes:
+    tokenAuth:
+      type: apiKey
+      in: header
+      name: Authorization
+      description: 'Token-based authentication. Header format: Authorization: Token <your_token>'
+security:
+- tokenAuth: []
