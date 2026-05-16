@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MindMate - التوثيق الشامل لمخطط الكلاسات الصارم (Strict UML)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Tajawal', sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            padding: 0;
+            color: #333;
+            line-height: 1.6;
+        }
+        header {
+            background-color: #2c3e7a;
+            color: white;
+            padding: 30px 20px;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        header h1 {
+            margin: 0;
+            font-weight: 800;
+            font-size: 28px;
+        }
+        header p {
+            margin: 10px 0 0 0;
+            font-size: 16px;
+            opacity: 0.9;
+        }
+        .container {
+            max-width: 95%;
+            margin: 30px auto;
+            padding: 0 20px;
+        }
+        .mermaid-container {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+            width: 100%;
+            overflow: auto;
+            margin-bottom: 40px;
+            border-top: 4px solid #3b5bdb;
+            cursor: grab;
+        }
+        .mermaid-container:active {
+            cursor: grabbing;
+        }
+        .legend-box {
+            background: #eef2ff;
+            border-right: 4px solid #2c3e7a;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        .legend-box h3 { margin-top: 0; color: #2c3e7a; }
+        .legend-box ul { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 20px; }
+        .legend-box li { display: flex; align-items: center; font-family: monospace; font-size: 14px; }
+        .legend-box li span.arrow { font-weight: bold; color: #d35400; font-size: 18px; margin-left: 8px; background: #fff; padding: 2px 6px; border-radius: 4px;}
+        
+        .docs-section {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        }
+        .docs-section h2 {
+            color: #2c3e7a;
+            border-bottom: 2px solid #eef2ff;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .app-block {
+            margin-bottom: 40px;
+        }
+        .app-block h3 {
+            background-color: #eef2ff;
+            color: #3b5bdb;
+            padding: 10px 15px;
+            border-radius: 6px;
+            font-size: 20px;
+            display: inline-block;
+        }
+        .class-card {
+            border-right: 4px solid #93a5f0;
+            padding: 15px;
+            margin-bottom: 20px;
+            background-color: #fafbfc;
+            border-radius: 4px;
+        }
+        .class-card h4 {
+            margin: 0 0 10px 0;
+            color: #1a1a2e;
+            font-size: 18px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .class-card h4 code {
+            background: #eef2ff;
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 16px;
+            color: #27ae60;
+        }
+        .info-row {
+            margin-bottom: 8px;
+        }
+        .info-row strong {
+            color: #555;
+            display: inline-block;
+            width: 140px;
+        }
+        ul.relations-list {
+            margin: 5px 0 0 0;
+            padding-inline-start: 20px;
+            color: #444;
+        }
+        ul.relations-list li {
+            margin-bottom: 4px;
+        }
+        .badge {
+            background: #e67e22;
+            color: white;
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            margin-right: 8px;
+        }
+        .badge.compose { background: #c0392b; }
+        .badge.aggr { background: #f39c12; }
+        .badge.inherit { background: #27ae60; }
+        .badge.depend { background: #8e44ad; }
+        .zoom-controls {
+            text-align: left;
+            margin-bottom: 10px;
+        }
+        .zoom-controls button {
+            background: #2c3e7a;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            margin-left: 5px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-family: inherit;
+        }
+        .zoom-controls button:hover {
+            background: #3b5bdb;
+        }
+    </style>
+    <!-- Include svg-pan-zoom library -->
+    <script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"></script>
+</head>
+<body>
+
+    <header>
+        <h1>MindMate — مخطط الكلاسات الصارم (Strict UML) والتوثيق المفصل</h1>
+        <p>يعرض هذا المستند الهيكلية الأكاديمية الدقيقة لجميع كلاسات المشروع وعلاقاتها، مع الحفاظ على الترتيب الأصلي المرن.</p>
+    </header>
+
+    <div class="container">
+        
+        <div class="legend-box">
+            <h3>دليل مفاتيح العلاقات الأكاديمية (UML Legend)</h3>
+            <ul>
+                <li><span class="arrow">*--</span> <strong>Composition (تركيب):</strong> علاقة قوية جداً (إذا حذف الأب يحذف الابن).</li>
+                <li><span class="arrow">o--</span> <strong>Aggregation (تجميع):</strong> علاقة ضعيفة (يمكن للابن العيش بدون الأب).</li>
+                <li><span class="arrow">&lt;|--</span> <strong>Inheritance (وراثة):</strong> الكلاس يرث خصائص الكلاس الأساسي.</li>
+                <li><span class="arrow">..&gt;</span> <strong>Dependency (اعتمادية):</strong> الكلاس يعتمد على كلاس آخر برمجياً.</li>
+            </ul>
+        </div>
+
+        <div class="zoom-controls">
+            <button id="zoom-in">تكبير (+)</button>
+            <button id="zoom-out">تصغير (-)</button>
+            <button id="zoom-reset">إعادة الضبط</button>
+            <span style="font-size: 14px; color: #666; margin-right: 15px;">* يمكنك تحريك المخطط باستخدام الماوس (Drag)</span>
+        </div>
+        
+        <!-- قسم المخطط -->
+        <div class="mermaid-container" id="mermaid-wrapper">
+            <h2 style="text-align: center; color: #2c3e7a; margin-top:0;">مخطط العلاقات الصارم (UML Class Diagram)</h2>
+            <div class="mermaid" id="mermaid-diagram">
+classDiagram
+
+    %% Inheritance Base
+    class AbstractBaseUser {
+        -String password
+        -DateTime last_login
+    }
+    class BaseUserManager {
+        +normalize_email(email) String
+    }
+    class PermissionsMixin {
+        -Boolean is_superuser
+    }
+    class GenericEntity {
+        Interface
+    }
+
+    %% Managers
+    class UserManager {
+        +create_user(email, password, **extra_fields) User
+        +create_superuser(email, password, **extra_fields) User
+    }
+    class DoctorManager {
+        +create_user(email, password, **extra_fields) Doctor
+    }
+    class AdminManager {
+        +create_user(email, password, **extra_fields) Admin
+    }
+
+    UserManager --|> BaseUserManager
+    DoctorManager --|> BaseUserManager
+    AdminManager --|> BaseUserManager
+
+    %% Accounts App
+    class User {
+        -UUID user_id
+        -String email
+        -String full_name
+        -Date date_of_birth
+        -String gender
+        -String phone_number
+        -String nationality
+        -Image profile_image
+        -Boolean is_active
+        -Boolean is_onboarded
+        -Boolean initial_survey_completed
+        -Date data_collection_start_date
+        -DateTime deleted_at
+        -DateTime created_at
+        -DateTime updated_at
+        -Boolean is_staff
+        +is_deleted() Boolean
+    }
+    class Doctor {
+        -UUID doctor_id
+        -String email
+        -String full_name
+        -String nationality
+        -String specialization
+        -String whatsapp_number
+        -Boolean is_whatsapp_visible
+        -String bio
+        -Image profile_image
+        -File cv_file_path
+        -String status
+        -String rejection_reason
+        -Boolean is_active
+        -DateTime approved_at
+        -DateTime deleted_at
+        -DateTime created_at
+        -DateTime updated_at
+        +is_approved() Boolean
+    }
+    class Admin {
+        -UUID admin_id
+        -String email
+        -String full_name
+        -DateTime created_at
+    }
+    
+    %% Inheritance Relations
+    User --|> AbstractBaseUser
+    User --|> PermissionsMixin
+    Doctor --|> AbstractBaseUser
+    Admin --|> AbstractBaseUser
+
+    %% Manager Relations
+    UserManager ..> User : manages
+    DoctorManager ..> Doctor : manages
+    AdminManager ..> Admin : manages
+
+    class UserSession {
+        -UUID session_id
+        -String token_hash
+        -Map device_info
+        -String ip_address
+        -DateTime expires_at
+        -DateTime created_at
+        +is_expired() Boolean
+        +clean()
+    }
+    class AuthToken {
+        -UUID token_id
+        -String token_hash
+        -String token_type
+        -DateTime expires_at
+        -DateTime used_at
+        -DateTime created_at
+        +is_used() Boolean
+        +is_expired() Boolean
+        +clean()
+    }
+
+    %% Composition (CASCADE)
+    User "1" *-- "*" UserSession
+    Doctor "1" *-- "*" UserSession
+    Admin "1" *-- "*" UserSession
+    User "1" *-- "*" AuthToken
+    Doctor "1" *-- "*" AuthToken
+
+    %% Dependency (Uses-a)
+    UserSession ..> AuthToken : validates_via
+
+    %% Notifications App
+    class UserNotification {
+        -Integer notification_id
+        -String title
+        -String body
+        -String notification_type
+        -String related_entity_type
+        -Integer related_entity_id
+        -Boolean is_read
+        -DateTime created_at
+        -DateTime read_at
+    }
+    class DoctorNotification {
+        -Integer notification_id
+        -String title
+        -String body
+        -String notification_type
+        -String related_entity_type
+        -Integer related_entity_id
+        -Boolean is_read
+        -DateTime created_at
+        -DateTime read_at
+    }
+    class AdminNotification {
+        -Integer notification_id
+        -String title
+        -String body
+        -String notification_type
+        -String related_entity_type
+        -Integer related_entity_id
+        -Boolean is_read
+        -DateTime created_at
+        -DateTime read_at
+    }
+
+    %% Composition (CASCADE)
+    User "1" *-- "*" UserNotification
+    Doctor "1" *-- "*" DoctorNotification
+    Admin "1" *-- "*" AdminNotification
+    
+    %% Dependency (Generic Foreign Key style via related_entity_type)
+    UserNotification ..> GenericEntity : relates_to
+    DoctorNotification ..> GenericEntity : relates_to
+    AdminNotification ..> GenericEntity : relates_to
+
+    %% Survey App
+    class InitialSurveyQuestion {
+        -Integer question_id
+        -String question_text
+        -String question_type
+        -String category
+        -Map options
+        -Integer display_order
+        -Boolean is_active
+    }
+    class InitialSurveyResponse {
+        -Integer response_id
+        -String answer_text
+        -Float answer_value
+        -DateTime answered_at
+    }
+    
+    %% Composition (CASCADE)
+    User "1" *-- "*" InitialSurveyResponse
+    InitialSurveyQuestion "1" *-- "*" InitialSurveyResponse
+
+    %% Chatbot App
+    class ChatbotConversation {
+        -Integer conversation_id
+        -String status
+        -DateTime started_at
+        -DateTime ended_at
+    }
+    class ChatbotMessage {
+        -Integer message_id
+        -String sender
+        -String content
+        -DateTime sent_at
+    }
+    
+    %% Composition (CASCADE)
+    User "1" *-- "*" ChatbotConversation
+    ChatbotConversation "1" *-- "*" ChatbotMessage
+
+    %% Chat App
+    class Conversation {
+        -UUID id
+        -DateTime created_at
+    }
+    class Message {
+        -UUID id
+        -String sender_type
+        -UUID sender_id
+        -String content
+        -String message_type
+        -Boolean is_seen
+        -DateTime created_at
+    }
+    
+    %% Composition (CASCADE)
+    User "1" *-- "*" Conversation
+    Doctor "1" *-- "*" Conversation
+    Conversation "1" *-- "*" Message
+
+    %% Tracking App
+    class DailyMoodEntry {
+        -Integer mood_id
+        -Integer mood_level
+        -String mood_label
+        -String reason_note
+        -Date recorded_date
+        -DateTime created_at
+    }
+    User "1" *-- "*" DailyMoodEntry
+
+    class QuestionnaireType {
+        -Integer questionnaire_type_id
+        -String code
+        -String name
+        -String description
+        -Integer max_score
+        -Map scoring_ranges
+        -Boolean is_active
+    }
+    class QuestionnaireQuestion {
+        -Integer question_id
+        -String question_text
+        -Integer question_order
+        -Map options
+        -Boolean is_active
+    }
+    QuestionnaireType "1" *-- "*" QuestionnaireQuestion
+
+    class QuestionnaireSession {
+        -Integer session_id
+        -Integer total_score
+        -String severity_level
+        -Boolean completed
+        -Date session_date
+        -DateTime started_at
+        -DateTime completed_at
+    }
+    User "1" *-- "*" QuestionnaireSession
+    QuestionnaireType "1" *-- "*" QuestionnaireSession
+
+    class QuestionnaireAnswer {
+        -Integer answer_id
+        -Integer selected_option
+        -Integer score
+        -DateTime answered_at
+    }
+    QuestionnaireSession "1" *-- "*" QuestionnaireAnswer
+    QuestionnaireQuestion "1" *-- "*" QuestionnaireAnswer
+
+    class JournalEntry {
+        -Integer journal_id
+        -String content
+        -Date entry_date
+        -DateTime created_at
+        -DateTime updated_at
+    }
+    User "1" *-- "*" JournalEntry
+
+    class JournalAnalysis {
+        -Integer analysis_id
+        -Map detected_symptoms
+        -Map disorder_scores
+        -String dominant_pattern
+        -Map raw_indicators
+        -DateTime analyzed_at
+    }
+    %% Composition (CASCADE 1-to-1)
+    JournalEntry "1" *-- "1" JournalAnalysis
+
+    class JournalSharingPermission {
+        -Integer permission_id
+        -Boolean share_full_journal
+        -Boolean share_analysis_only
+        -DateTime granted_at
+    }
+    User "1" *-- "*" JournalSharingPermission
+    Doctor "1" *-- "*" JournalSharingPermission
+
+    class DailyProgress {
+        -Integer progress_id
+        -Date progress_date
+        -Boolean mood_completed
+        -Boolean phq9_completed
+        -Boolean gad7_completed
+        -Boolean pss10_completed
+        -Boolean questionnaire_completed
+        -Boolean journal_completed
+        -Boolean all_completed
+        -Boolean tip_shown
+        -DateTime created_at
+        -DateTime updated_at
+        +save()
+    }
+    User "1" *-- "*" DailyProgress
+
+    %% Assessment App
+    class Assessment {
+        -Integer assessment_id
+        -String assessment_type
+        -Float depression_score
+        -Float anxiety_score
+        -Float stress_score
+        -Float confidence_score
+        -String overall_severity
+        -Boolean is_critical
+        -Map mood_trend
+        -Map questionnaire_summary
+        -Map journal_summary
+        -String dominant_condition
+        -Map recommendations
+        -Integer data_days_count
+        -Integer created_from_days
+        -DateTime assessed_at
+    }
+    User "1" *-- "*" Assessment
+
+    class TipAndRecommendation {
+        -Integer tip_id
+        -String category
+        -String content
+        -String tip_type
+        -String severity_target
+        -Boolean is_active
+        -DateTime created_at
+    }
+    class UserDailyTip {
+        -Integer id
+        -Date shown_date
+        -DateTime shown_at
+    }
+    User "1" *-- "*" UserDailyTip
+    TipAndRecommendation "1" *-- "*" UserDailyTip
+
+    %% Clinic App
+    class DoctorConditionTag {
+        -Integer tag_id
+        -String condition
+    }
+    Doctor "1" *-- "*" DoctorConditionTag
+
+    class DoctorPatientRequest {
+        -Integer request_id
+        -String request_type
+        -String status
+        -String user_message
+        -String doctor_response
+        -DateTime requested_at
+        -DateTime responded_at
+    }
+    User "1" *-- "*" DoctorPatientRequest
+    Doctor "1" *-- "*" DoctorPatientRequest
+    %% Aggregation (SET_NULL)
+    Assessment "1" o-- "*" DoctorPatientRequest
+
+    class DoctorPatientRelationship {
+        -Integer relationship_id
+        -String status
+        -DateTime started_at
+        -DateTime ended_at
+    }
+    Doctor "1" *-- "*" DoctorPatientRelationship
+    User "1" *-- "*" DoctorPatientRelationship
+    %% Aggregation (SET_NULL)
+    DoctorPatientRequest "1" o-- "0..1" DoctorPatientRelationship
+
+    class DoctorPatientMessage {
+        -Integer message_id
+        -String sender_type
+        -String content
+        -Boolean is_read
+        -DateTime sent_at
+        -DateTime read_at
+    }
+    DoctorPatientRelationship "1" *-- "*" DoctorPatientMessage
+
+    class DoctorRegistrationLog {
+        -Integer log_id
+        -String action
+        -String notes
+        -DateTime action_at
+    }
+    Doctor "1" *-- "*" DoctorRegistrationLog
+    %% Aggregation (SET_NULL)
+    Admin "1" o-- "*" DoctorRegistrationLog
+
+    class DoctorRating {
+        -Integer rating_id
+        -Integer score
+        -String comment
+        -DateTime created_at
+    }
+    Doctor "1" *-- "*" DoctorRating
+    User "1" *-- "*" DoctorRating
+
+            </div>
+        </div>
+
+        <!-- قسم التوثيق والشرح -->
+        <div class="docs-section">
+            <h2>التوثيق المفصّل للعلاقات الأكاديمية الصارمة (Documentation)</h2>
+            <p>تم تحديد العلاقات الأكاديمية بدقة متناهية بناءً على قيود قاعدة البيانات الحقيقية في مشروع Django (مثل <code>CASCADE</code> و <code>SET_NULL</code>) وبنية الكلاسات.</p>
+
+            <!-- Accounts App -->
+            <div class="app-block">
+                <h3>📦 Accounts (المستخدمين والمصادقة)</h3>
+                
+                <div class="class-card">
+                    <h4><code>AbstractBaseUser</code> (الكلاس المجرد)</h4>
+                    <div class="info-row"><strong>الاستخدام:</strong> يمثل الكلاس الأب الذي يتم وراثة الخصائص الأساسية للمصادقة منه (مثل كلمة المرور وآخر دخول).</div>
+                    <div class="info-row"><strong>العلاقات (Inheritance):</strong>
+                        <ul class="relations-list">
+                            <li><span class="badge inherit">&lt;|--</span> يتم وراثته من قبل <code>User</code>، <code>Doctor</code>، و <code>Admin</code> كعلاقة Is-a حقيقية.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="class-card">
+                    <h4><code>User</code> / <code>Doctor</code> / <code>Admin</code></h4>
+                    <div class="info-row"><strong>الاستخدام:</strong> كلاسات أنواع المستخدمين الأساسية.</div>
+                    <div class="info-row"><strong>العلاقات (Composition):</strong>
+                        <ul class="relations-list">
+                            <li><span class="badge compose">*--</span> يمتلكون علاقة تركيب قوية (Composition / CASCADE) مع جداول التوكن والجلسات. إذا تم حذف المستخدم، تُحذف كل جلساته وتوكناته نهائياً.</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="class-card">
+                    <h4><code>UserSession</code> & <code>AuthToken</code></h4>
+                    <div class="info-row"><strong>الاستخدام:</strong> إدارة جلسات الدخول والتوكنات الموثقة.</div>
+                    <div class="info-row"><strong>العلاقات (Dependency):</strong>
+                        <ul class="relations-list">
+                            <li><span class="badge depend">..&gt;</span> توجد علاقة اعتمادية (Dependency) حيث تعتمد جلسة <code>UserSession</code> برمجياً على <code>AuthToken</code> للمصادقة السليمة دون وجود حقل Foreign Key مباشر.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Clinic App -->
+            <div class="app-block">
+                <h3>📦 Clinic (العيادة والعلاقات الطبية)</h3>
+
+                <div class="class-card">
+                    <h4><code>DoctorPatientRequest</code></h4>
+                    <div class="info-row"><strong>الاستخدام:</strong> طلبات الربط بين الطبيب والمريض.</div>
+                    <div class="info-row"><strong>العلاقات (Aggregation & Composition):</strong>
+                        <ul class="relations-list">
+                            <li><span class="badge compose">*--</span> يمتلك علاقة تركيب مع <code>User</code> و <code>Doctor</code>.</li>
+                            <li><span class="badge aggr">o--</span> يمتلك علاقة <strong>تجميع (Aggregation)</strong> مع <code>Assessment</code> لأن الحقل <code>on_delete=models.SET_NULL</code>. هذا يعني أن الطلب لا يمتلك التقييم بشكل حصري، وإذا تم حذف التقييم، يبقى الطلب موجوداً (تجميع ضعيف).</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="class-card">
+                    <h4><code>DoctorPatientRelationship</code></h4>
+                    <div class="info-row"><strong>الاستخدام:</strong> يمثل العلاقة الرسمية النشطة.</div>
+                    <div class="info-row"><strong>العلاقات (Aggregation & Composition):</strong>
+                        <ul class="relations-list">
+                            <li><span class="badge compose">*--</span> تركيب قوي مع الرسائل <code>DoctorPatientMessage</code> (تُحذف بحذف العلاقة).</li>
+                            <li><span class="badge aggr">o--</span> <strong>تجميع (Aggregation)</strong> مع <code>DoctorPatientRequest</code> (مرتبط بالطلب الأصلي عبر <code>SET_NULL</code>).</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="class-card">
+                    <h4><code>DoctorRegistrationLog</code></h4>
+                    <div class="info-row"><strong>العلاقات (Aggregation):</strong>
+                        <ul class="relations-list">
+                            <li><span class="badge aggr">o--</span> يمتلك علاقة تجميع مع <code>Admin</code> (المدير الذي وافق على التسجيل). الحقل <code>on_delete=models.SET_NULL</code>، مما يعني أنه لو استقال الإدمن أو تم حذفه، سيبقى سجل الطبيب موجوداً بدون أن يُدمر.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Notifications App -->
+            <div class="app-block">
+                <h3>📦 Notifications (نظام الإشعارات)</h3>
+                <div class="class-card">
+                    <h4><code>*Notification</code> Models</h4>
+                    <div class="info-row"><strong>العلاقات (Dependency & Composition):</strong>
+                        <ul class="relations-list">
+                            <li><span class="badge compose">*--</span> تركيب كامل مع مالك الإشعار.</li>
+                            <li><span class="badge depend">..&gt;</span> اعتمادية <strong>Dependency</strong> مع الكيانات الأخرى <code>GenericEntity</code> من خلال حقول الـ ID والـ Type بدلاً من الـ Foreign Key الثابت، مما يعني أن الإشعار "يعتمد على" كيان ما لمعرفة محتواه، دون الالتزام بتركيبه.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- بقية التطبيقات (Tracking, Survey, Assessment) -->
+            <div class="app-block">
+                <h3>📦 Survey, Chatbot, Chat, Tracking, Assessment</h3>
+                <p>جميع هذه التطبيقات تمثل جوهر النظام (اليوميات، الاستبيانات، التقييم)، وتعتمد بشكل شبه كلي على علاقات <strong>التركيب Composition (*--)</strong> (أي <code>models.CASCADE</code>).</p>
+                <p><strong>لماذا؟</strong> لأنه في نظام طبي نفسي مثل MindMate، إذا طلب المستخدم (User) إغلاق حسابه وحذف بياناته، يجب أن يتم حذف (تدمير) كافة يومياته (JournalEntry)، رسائله (Message)، تقييماته (Assessment)، واستبياناته (SurveyResponse) بشكل نهائي ومرتبط كلياً، وهو التطبيق الأمثل والفعلي لمفهوم الـ Composition في علم هندسة البرمجيات (Software Engineering).</p>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- إعدادات وأكواد Mermaid.js -->
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        
+        // Configuration
+        mermaid.initialize({ 
+            startOnLoad: true, 
+            theme: 'default',
+            securityLevel: 'loose',
+            logLevel: 1,
+            class: {
+                useMaxWidth: false
+            }
+        });
+
+        // Initialize Pan/Zoom after Mermaid renders
+        document.addEventListener('DOMContentLoaded', () => {
+            const targetNode = document.getElementById('mermaid-diagram');
+            const observerOptions = { childList: true, subtree: true };
+            
+            let panZoomInstance = null;
+
+            const observer = new MutationObserver((mutationsList, observer) => {
+                const svg = targetNode.querySelector('svg');
+                if (svg && !panZoomInstance) {
+                    // Make SVG fill the container
+                    svg.style.width = '100%';
+                    svg.style.height = '600px'; 
+                    svg.style.maxWidth = 'none';
+
+                    // Initialize svg-pan-zoom
+                    panZoomInstance = svgPanZoom(svg, {
+                        zoomEnabled: true,
+                        controlIconsEnabled: false,
+                        fit: true,
+                        center: true,
+                        minZoom: 0.1,
+                        maxZoom: 10
+                    });
+                    
+                    // Hook up buttons
+                    document.getElementById('zoom-in').addEventListener('click', () => panZoomInstance.zoomIn());
+                    document.getElementById('zoom-out').addEventListener('click', () => panZoomInstance.zoomOut());
+                    document.getElementById('zoom-reset').addEventListener('click', () => {
+                        panZoomInstance.resetZoom();
+                        panZoomInstance.center();
+                    });
+                }
+            });
+            
+            observer.observe(targetNode, observerOptions);
+        });
+    </script>
+</body>
+</html>

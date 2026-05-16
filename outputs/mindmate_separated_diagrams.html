@@ -1,0 +1,1332 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MindMate - توثيق الكلاسات الشامل (Full Classes UML)</title>
+    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Tajawal', sans-serif; background-color: #f4f7f6; margin: 0; padding: 20px; color: #333; }
+        header { background-color: #2c3e7a; color: white; padding: 20px; text-align: center; border-radius: 8px; margin-bottom: 20px;}
+        h2 { color: #2c3e7a; border-bottom: 2px solid #eef2ff; padding-bottom: 10px; margin-top: 40px;}
+        .mermaid-container { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); width: 100%; height: 80vh; margin-bottom: 40px; border-top: 4px solid #3b5bdb; overflow: hidden; cursor: grab; }
+        .mermaid-container:active { cursor: grabbing; }
+        .zoom-controls { margin-bottom: 10px; }
+        .zoom-controls button { background: #2c3e7a; color: white; border: none; padding: 8px 15px; margin-left: 5px; border-radius: 4px; cursor: pointer; }
+        .zoom-controls button:hover { background: #3b5bdb; }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/svg-pan-zoom@3.6.1/dist/svg-pan-zoom.min.js"></script>
+</head>
+<body>
+    <header>
+        <h1>MindMate — توثيق الكلاسات الشامل (Full Classes UML)</h1>
+        <p>يحتوي هذا الملف على جميع كلاسات المشروع مستخرجة تلقائياً من الكود המصدري.</p>
+    </header>
+
+    <div>
+        <h2>1. Models & Database Layer (طبقة قواعد البيانات)</h2>
+        <div class="zoom-controls">
+            <button class="zoom-in">تكبير (+)</button>
+            <button class="zoom-out">تصغير (-)</button>
+            <button class="zoom-reset">إعادة الضبط</button>
+        </div>
+        <div class="mermaid-container">
+            <div class="mermaid mermaid-diagram" id="diagram-1">
+classDiagram
+    direction LR
+    class UserManager {
+        +create_user()
+        +create_superuser()
+    }
+    class BaseUserManager
+    UserManager --|> BaseUserManager
+    class User {
+        +user_id
+        +email
+        +full_name
+        +date_of_birth
+        +gender
+        +phone_number
+        +nationality
+        +profile_image
+        +is_active
+        +is_onboarded
+        +initial_survey_completed
+        +data_collection_start_date
+        +deleted_at
+        +created_at
+        +updated_at
+        +is_staff
+        +objects
+        +__str__()
+        +is_deleted()
+    }
+    class AbstractBaseUser
+    User --|> AbstractBaseUser
+    class PermissionsMixin
+    User --|> PermissionsMixin
+    class DoctorManager {
+        +create_user()
+    }
+    class BaseUserManager
+    DoctorManager --|> BaseUserManager
+    class Doctor {
+        +doctor_id
+        +email
+        +full_name
+        +nationality
+        +specialization
+        +whatsapp_number
+        +is_whatsapp_visible
+        +bio
+        +profile_image
+        +cv_file_path
+        +status
+        +rejection_reason
+        +is_active
+        +approved_at
+        +deleted_at
+        +created_at
+        +updated_at
+        +objects
+        +__str__()
+        +is_approved()
+    }
+    class AbstractBaseUser
+    Doctor --|> AbstractBaseUser
+    class AdminManager {
+        +create_user()
+    }
+    class BaseUserManager
+    AdminManager --|> BaseUserManager
+    class Admin {
+        +admin_id
+        +email
+        +full_name
+        +created_at
+        +objects
+        +__str__()
+    }
+    class AbstractBaseUser
+    Admin --|> AbstractBaseUser
+    class UserSession {
+        +session_id
+        +user
+        +doctor
+        +admin
+        +token_hash
+        +device_info
+        +ip_address
+        +expires_at
+        +created_at
+        +clean()
+        +__str__()
+    }
+    class Model
+    UserSession --|> Model
+    class AuthToken {
+        +token_id
+        +user
+        +doctor
+        +token_hash
+        +token_type
+        +expires_at
+        +used_at
+        +created_at
+        +clean()
+        +is_used()
+        +is_expired()
+        +__str__()
+    }
+    class Model
+    AuthToken --|> Model
+    class InitialSurveyQuestion {
+        +question_id
+        +question_text
+        +question_type
+        +category
+        +options
+        +display_order
+        +is_active
+        +__str__()
+    }
+    class Model
+    InitialSurveyQuestion --|> Model
+    class InitialSurveyResponse {
+        +response_id
+        +user
+        +question
+        +answer_text
+        +answer_value
+        +answered_at
+        +__str__()
+    }
+    class Model
+    InitialSurveyResponse --|> Model
+    class DailyMoodEntry {
+        +mood_id
+        +user
+        +mood_level
+        +mood_label
+        +reason_note
+        +recorded_date
+        +created_at
+        +__str__()
+    }
+    class Model
+    DailyMoodEntry --|> Model
+    class QuestionnaireType {
+        +questionnaire_type_id
+        +code
+        +name
+        +description
+        +max_score
+        +scoring_ranges
+        +is_active
+        +__str__()
+    }
+    class Model
+    QuestionnaireType --|> Model
+    class QuestionnaireQuestion {
+        +question_id
+        +questionnaire_type
+        +question_text
+        +question_order
+        +options
+        +is_active
+        +__str__()
+    }
+    class Model
+    QuestionnaireQuestion --|> Model
+    class QuestionnaireSession {
+        +session_id
+        +user
+        +questionnaire_type
+        +total_score
+        +severity_level
+        +completed
+        +session_date
+        +started_at
+        +completed_at
+        +__str__()
+    }
+    class Model
+    QuestionnaireSession --|> Model
+    class QuestionnaireAnswer {
+        +answer_id
+        +session
+        +question
+        +selected_option
+        +score
+        +answered_at
+        +__str__()
+    }
+    class Model
+    QuestionnaireAnswer --|> Model
+    class JournalEntry {
+        +journal_id
+        +user
+        +content
+        +entry_date
+        +created_at
+        +updated_at
+        +__str__()
+    }
+    class Model
+    JournalEntry --|> Model
+    class JournalAnalysis {
+        +analysis_id
+        +journal
+        +detected_symptoms
+        +disorder_scores
+        +dominant_pattern
+        +raw_indicators
+        +analyzed_at
+        +__str__()
+    }
+    class Model
+    JournalAnalysis --|> Model
+    class JournalSharingPermission {
+        +permission_id
+        +user
+        +doctor
+        +share_full_journal
+        +share_analysis_only
+        +granted_at
+        +__str__()
+    }
+    class Model
+    JournalSharingPermission --|> Model
+    class DailyProgress {
+        +progress_id
+        +user
+        +progress_date
+        +mood_completed
+        +phq9_completed
+        +gad7_completed
+        +pss10_completed
+        +questionnaire_completed
+        +journal_completed
+        +all_completed
+        +tip_shown
+        +created_at
+        +updated_at
+        +save()
+        +__str__()
+    }
+    class Model
+    DailyProgress --|> Model
+    class Assessment {
+        +assessment_id
+        +user
+        +assessment_type
+        +depression_score
+        +anxiety_score
+        +stress_score
+        +confidence_score
+        +overall_severity
+        +is_critical
+        +mood_trend
+        +questionnaire_summary
+        +journal_summary
+        +dominant_condition
+        +recommendations
+        +data_days_count
+        +created_from_days
+        +assessed_at
+        +__str__()
+    }
+    class Model
+    Assessment --|> Model
+    class TipAndRecommendation {
+        +tip_id
+        +category
+        +content
+        +tip_type
+        +severity_target
+        +is_active
+        +created_at
+        +__str__()
+    }
+    class Model
+    TipAndRecommendation --|> Model
+    class UserDailyTip {
+        +id
+        +user
+        +tip
+        +shown_date
+        +shown_at
+        +__str__()
+    }
+    class Model
+    UserDailyTip --|> Model
+    class DoctorConditionTag {
+        +tag_id
+        +doctor
+        +condition
+        +__str__()
+    }
+    class Model
+    DoctorConditionTag --|> Model
+    class DoctorPatientRequest {
+        +request_id
+        +user
+        +doctor
+        +request_type
+        +status
+        +assessment
+        +user_message
+        +doctor_response
+        +requested_at
+        +responded_at
+        +__str__()
+    }
+    class Model
+    DoctorPatientRequest --|> Model
+    class DoctorPatientRelationship {
+        +relationship_id
+        +doctor
+        +user
+        +request
+        +status
+        +started_at
+        +ended_at
+        +__str__()
+    }
+    class Model
+    DoctorPatientRelationship --|> Model
+    class DoctorPatientMessage {
+        +message_id
+        +relationship
+        +sender_type
+        +content
+        +is_read
+        +sent_at
+        +read_at
+        +__str__()
+    }
+    class Model
+    DoctorPatientMessage --|> Model
+    class DoctorRegistrationLog {
+        +log_id
+        +doctor
+        +admin
+        +action
+        +notes
+        +action_at
+        +__str__()
+    }
+    class Model
+    DoctorRegistrationLog --|> Model
+    class DoctorRating {
+        +rating_id
+        +doctor
+        +user
+        +score
+        +comment
+        +created_at
+        +__str__()
+    }
+    class Model
+    DoctorRating --|> Model
+    class ChatbotConversation {
+        +conversation_id
+        +user
+        +status
+        +started_at
+        +ended_at
+        +__str__()
+    }
+    class Model
+    ChatbotConversation --|> Model
+    class ChatbotMessage {
+        +message_id
+        +conversation
+        +sender
+        +content
+        +sent_at
+        +__str__()
+    }
+    class Model
+    ChatbotMessage --|> Model
+    class UserNotification {
+        +notification_id
+        +user
+        +title
+        +body
+        +notification_type
+        +related_entity_type
+        +related_entity_id
+        +is_read
+        +created_at
+        +read_at
+        +__str__()
+    }
+    class Model
+    UserNotification --|> Model
+    class DoctorNotification {
+        +notification_id
+        +doctor
+        +title
+        +body
+        +notification_type
+        +related_entity_type
+        +related_entity_id
+        +is_read
+        +created_at
+        +read_at
+        +__str__()
+    }
+    class Model
+    DoctorNotification --|> Model
+    class AdminNotification {
+        +notification_id
+        +admin
+        +title
+        +body
+        +notification_type
+        +related_entity_type
+        +related_entity_id
+        +is_read
+        +created_at
+        +read_at
+        +__str__()
+    }
+    class Model
+    AdminNotification --|> Model
+    class MoodLevel {
+    }
+    class Enum
+    MoodLevel --|> Enum
+    class QuestionnaireType {
+    }
+    class Enum
+    QuestionnaireType --|> Enum
+    class RiskLevel {
+    }
+    class Enum
+    RiskLevel --|> Enum
+    class MoodEntry {
+        +entry_id
+        +user_id
+        +entry_date
+        +mood_value
+        +mood_label
+        +note
+        +timestamp
+    }
+    class QuestionItem {
+        +question_id
+        +questionnaire_type
+        +question_index
+        +text_ar
+        +options_ar
+        +option_scores
+        +is_reverse_scored
+    }
+    class QuestionnaireResponse {
+        +response_id
+        +user_id
+        +question_id
+        +questionnaire_type
+        +question_index
+        +answer_index
+        +answer_value
+        +response_date
+        +timestamp
+    }
+    class DailyAnalysis {
+        +analysis_date
+        +user_id
+        +mood_score
+        +mood_entry_count
+        +anxiety_score
+        +depression_score
+        +stress_score
+        +wellbeing_score
+        +risk_level
+        +risk_label_ar
+        +report_ar
+    }
+    class FifteenDayAnalysis {
+        +user_id
+        +start_date
+        +end_date
+        +average_wellbeing
+        +trend
+        +trend_ar
+        +stability
+        +stability_ar
+        +risk_level
+        +risk_label_ar
+        +anxiety_avg
+        +depression_avg
+        +stress_avg
+        +daily_scores
+        +recommendations_ar
+        +adaptive_adjustments_ar
+        +report_ar
+    }
+    class ThirtyDayAnalysis {
+        +user_id
+        +start_date
+        +end_date
+        +average_wellbeing
+        +risk_level
+        +risk_label_ar
+        +first_half_wellbeing
+        +second_half_wellbeing
+        +period_comparison
+        +period_comparison_ar
+        +improvement_percentage
+        +overall_trend
+        +overall_trend_ar
+        +trend_consistency
+        +trend_consistency_ar
+        +stability
+        +stability_ar
+        +worst_day_score
+        +best_day_score
+        +score_range
+        +anxiety_avg
+        +depression_avg
+        +stress_avg
+        +anxiety_trend
+        +depression_trend
+        +stress_trend
+        +anxiety_trend_ar
+        +depression_trend_ar
+        +stress_trend_ar
+        +dominant_concern
+        +dominant_concern_ar
+        +weekly_pattern_detected
+        +weekly_pattern_ar
+        +domain_correlation_ar
+        +daily_scores
+        +recommendations_ar
+        +adaptive_adjustments_ar
+        +severity_trajectory
+        +severity_trajectory_ar
+        +report_ar
+    }
+    class AdaptiveState {
+        +user_id
+        +gad7_weight
+        +phq9_weight
+        +pss10_weight
+        +asked_question_ids
+        +last_question_day
+        +questions_delivered_count
+    }
+    class UserProfile {
+        +user_id
+        +name
+        +created_at
+    }
+    class Conversation {
+        +id
+        +patient
+        +doctor
+        +created_at
+        +__str__()
+    }
+    class Model
+    Conversation --|> Model
+    class Message {
+        +id
+        +conversation
+        +sender_type
+        +sender_id
+        +content
+        +message_type
+        +is_seen
+        +created_at
+        +__str__()
+    }
+    class Model
+    Message --|> Model
+    class MessageType {
+    }
+    class TextChoices
+    MessageType --|> TextChoices
+            </div>
+        </div>
+    </div>
+    
+    <div>
+        <h2>2. Serializers & Data Transfer (طبقة السيرياليزر)</h2>
+        <div class="zoom-controls">
+            <button class="zoom-in">تكبير (+)</button>
+            <button class="zoom-out">تصغير (-)</button>
+            <button class="zoom-reset">إعادة الضبط</button>
+        </div>
+        <div class="mermaid-container">
+            <div class="mermaid mermaid-diagram" id="diagram-2">
+classDiagram
+    direction LR
+    class UserSerializer {
+    }
+    class ModelSerializer
+    UserSerializer --|> ModelSerializer
+    class DoctorSerializer {
+    }
+    class ModelSerializer
+    DoctorSerializer --|> ModelSerializer
+    class AdminSerializer {
+    }
+    class ModelSerializer
+    AdminSerializer --|> ModelSerializer
+    class UserRegistrationSerializer {
+        +password
+        +create()
+    }
+    class ModelSerializer
+    UserRegistrationSerializer --|> ModelSerializer
+    class DoctorRegistrationSerializer {
+        +password
+        +create()
+    }
+    class ModelSerializer
+    DoctorRegistrationSerializer --|> ModelSerializer
+    class LoginSerializer {
+        +email
+        +password
+        +role
+    }
+    class Serializer
+    LoginSerializer --|> Serializer
+    class InitialSurveyQuestionSerializer {
+    }
+    class ModelSerializer
+    InitialSurveyQuestionSerializer --|> ModelSerializer
+    class InitialSurveyResponseSerializer {
+        +question_id
+        +answer_text
+        +answer_value
+        +score
+        +validate()
+    }
+    class Serializer
+    InitialSurveyResponseSerializer --|> Serializer
+    class SubmitSurveySerializer {
+        +responses
+        +validate_responses()
+    }
+    class Serializer
+    SubmitSurveySerializer --|> Serializer
+    class QuestionnaireTypeSerializer {
+    }
+    class ModelSerializer
+    QuestionnaireTypeSerializer --|> ModelSerializer
+    class QuestionnaireQuestionSerializer {
+    }
+    class ModelSerializer
+    QuestionnaireQuestionSerializer --|> ModelSerializer
+    class DailyMoodSerializer {
+        +validate_mood_level()
+    }
+    class ModelSerializer
+    DailyMoodSerializer --|> ModelSerializer
+    class JournalEntrySerializer {
+    }
+    class ModelSerializer
+    JournalEntrySerializer --|> ModelSerializer
+    class DailyProgressSerializer {
+        +completion
+        +missing
+        +completed
+        +streak
+        +get_completion()
+        +get_missing()
+        +get_completed()
+        +get_streak()
+    }
+    class ModelSerializer
+    DailyProgressSerializer --|> ModelSerializer
+    class QuestionnaireAnswerSerializer {
+        +question_id
+        +selected_option
+        +score
+    }
+    class Serializer
+    QuestionnaireAnswerSerializer --|> Serializer
+    class SubmitQuestionnaireSerializer {
+        +questionnaire_code
+        +answers
+        +validate_questionnaire_code()
+        +validate_answers()
+    }
+    class Serializer
+    SubmitQuestionnaireSerializer --|> Serializer
+    class JournalAnalysisSerializer {
+    }
+    class ModelSerializer
+    JournalAnalysisSerializer --|> ModelSerializer
+    class DoctorApprovalSerializer {
+        +status
+        +rejection_reason
+    }
+    class Serializer
+    DoctorApprovalSerializer --|> Serializer
+    class DoctorProfileLiteSerializer {
+        +whatsapp_number
+        +link_status
+        +average_rating
+        +ratings_count
+        +get_average_rating()
+        +get_ratings_count()
+        +get_whatsapp_number()
+        +get_link_status()
+    }
+    class ModelSerializer
+    DoctorProfileLiteSerializer --|> ModelSerializer
+    class DoctorRatingSerializer {
+        +user_name
+        +validate_score()
+    }
+    class ModelSerializer
+    DoctorRatingSerializer --|> ModelSerializer
+    class DoctorContactSerializer {
+        +whatsapp_link
+        +whatsapp_number
+        +get_whatsapp_link()
+        +get_whatsapp_number()
+    }
+    class Serializer
+    DoctorContactSerializer --|> Serializer
+    class DoctorPatientLinkSerializer {
+        +doctor_id
+        +request_type
+    }
+    class Serializer
+    DoctorPatientLinkSerializer --|> Serializer
+    class PatientSerializer {
+        +status
+        +get_status()
+    }
+    class ModelSerializer
+    PatientSerializer --|> ModelSerializer
+    class DoctorPatientRequestSerializer {
+        +user_name
+        +user_email
+    }
+    class ModelSerializer
+    DoctorPatientRequestSerializer --|> ModelSerializer
+    class ChatbotMessageSerializer {
+    }
+    class ModelSerializer
+    ChatbotMessageSerializer --|> ModelSerializer
+    class ChatbotConversationSerializer {
+        +messages
+    }
+    class ModelSerializer
+    ChatbotConversationSerializer --|> ModelSerializer
+    class MessageSerializer {
+    }
+    class ModelSerializer
+    MessageSerializer --|> ModelSerializer
+    class ConversationSerializer {
+        +last_message
+        +other_party
+        +get_last_message()
+        +get_other_party()
+    }
+    class ModelSerializer
+    ConversationSerializer --|> ModelSerializer
+            </div>
+        </div>
+    </div>
+    
+    <div>
+        <h2>3. Views & API Endpoints (طبقة الواجهات)</h2>
+        <div class="zoom-controls">
+            <button class="zoom-in">تكبير (+)</button>
+            <button class="zoom-out">تصغير (-)</button>
+            <button class="zoom-reset">إعادة الضبط</button>
+        </div>
+        <div class="mermaid-container">
+            <div class="mermaid mermaid-diagram" id="diagram-3">
+classDiagram
+    direction LR
+    class UserRegistrationView {
+        +permission_classes
+        +post()
+    }
+    class APIView
+    UserRegistrationView --|> APIView
+    class DoctorRegistrationView {
+        +permission_classes
+        +post()
+    }
+    class APIView
+    DoctorRegistrationView --|> APIView
+    class LoginResponseSerializer {
+        +token
+        +expires_at
+        +role
+        +user
+        +doctor
+        +admin
+    }
+    class Serializer
+    LoginResponseSerializer --|> Serializer
+    class LoginView {
+        +permission_classes
+        +post()
+    }
+    class APIView
+    LoginView --|> APIView
+    class LogoutView {
+        +permission_classes
+        +post()
+    }
+    class APIView
+    LogoutView --|> APIView
+    class RequestEmailVerificationView {
+        +permission_classes
+        +post()
+    }
+    class APIView
+    RequestEmailVerificationView --|> APIView
+    class VerifyEmailView {
+        +permission_classes
+        +post()
+    }
+    class APIView
+    VerifyEmailView --|> APIView
+    class RequestPasswordResetView {
+        +permission_classes
+        +post()
+    }
+    class APIView
+    RequestPasswordResetView --|> APIView
+    class ResetPasswordView {
+        +permission_classes
+        +post()
+    }
+    class APIView
+    ResetPasswordView --|> APIView
+    class AdminPlatformStatsView {
+        +authentication_classes
+        +get()
+    }
+    class APIView
+    AdminPlatformStatsView --|> APIView
+    class AdminUserListView {
+        +authentication_classes
+        +permission_classes
+        +serializer_class
+        +get_queryset()
+    }
+    class ListAPIView
+    AdminUserListView --|> ListAPIView
+    class AdminDeactivateUserView {
+        +authentication_classes
+        +post()
+    }
+    class APIView
+    AdminDeactivateUserView --|> APIView
+    class AdminDeactivateDoctorView {
+        +authentication_classes
+        +post()
+    }
+    class APIView
+    AdminDeactivateDoctorView --|> APIView
+    class UserProfileUpdateView {
+        +authentication_classes
+        +permission_classes
+        +get()
+        +patch()
+    }
+    class APIView
+    UserProfileUpdateView --|> APIView
+    class DoctorProfileUpdateView {
+        +authentication_classes
+        +permission_classes
+        +get()
+        +patch()
+    }
+    class APIView
+    DoctorProfileUpdateView --|> APIView
+    class QuestionListView {
+        +authentication_classes
+        +permission_classes
+        +serializer_class
+        +get_queryset()
+    }
+    class ListAPIView
+    QuestionListView --|> ListAPIView
+    class SubmitSurveyView {
+        +authentication_classes
+        +permission_classes
+        +throttle_classes
+        +post()
+    }
+    class APIView
+    SubmitSurveyView --|> APIView
+    class DailyMoodView {
+        +authentication_classes
+        +permission_classes
+        +throttle_classes
+        +get()
+        +post()
+    }
+    class APIView
+    DailyMoodView --|> APIView
+    class DailyJournalView {
+        +authentication_classes
+        +permission_classes
+        +throttle_classes
+        +get()
+        +post()
+    }
+    class APIView
+    DailyJournalView --|> APIView
+    class DailyProgressView {
+        +authentication_classes
+        +permission_classes
+        +get()
+    }
+    class APIView
+    DailyProgressView --|> APIView
+    class SubmitQuestionnaireResponseSerializer {
+        +message
+        +total_score
+        +severity_level
+        +suggested_doctor
+    }
+    class Serializer
+    SubmitQuestionnaireResponseSerializer --|> Serializer
+    class SubmitQuestionnaireView {
+        +authentication_classes
+        +permission_classes
+        +throttle_classes
+        +_compute_severity()
+        +post()
+    }
+    class APIView
+    SubmitQuestionnaireView --|> APIView
+    class QuestionnaireTypeListView {
+        +authentication_classes
+        +permission_classes
+        +serializer_class
+        +queryset
+    }
+    class ListAPIView
+    QuestionnaireTypeListView --|> ListAPIView
+    class QuestionnaireQuestionListView {
+        +authentication_classes
+        +permission_classes
+        +get()
+    }
+    class APIView
+    QuestionnaireQuestionListView --|> APIView
+    class ComprehensiveAnalysisView {
+        +authentication_classes
+        +permission_classes
+        +throttle_classes
+        +get()
+    }
+    class APIView
+    ComprehensiveAnalysisView --|> APIView
+    class JournalSharingPermissionView {
+        +authentication_classes
+        +permission_classes
+        +get()
+        +post()
+    }
+    class APIView
+    JournalSharingPermissionView --|> APIView
+    class UserDailyTipView {
+        +authentication_classes
+        +permission_classes
+        +get()
+    }
+    class APIView
+    UserDailyTipView --|> APIView
+    class JournalHistoryView {
+        +authentication_classes
+        +permission_classes
+        +serializer_class
+        +get_queryset()
+    }
+    class ListAPIView
+    JournalHistoryView --|> ListAPIView
+    class IsDoctorPermission {
+        +has_permission()
+    }
+    class BasePermission
+    IsDoctorPermission --|> BasePermission
+    class IsAdminPermission {
+        +has_permission()
+    }
+    class BasePermission
+    IsAdminPermission --|> BasePermission
+    class AdminApproveDoctorView {
+        +authentication_classes
+        +permission_classes
+        +patch()
+    }
+    class APIView
+    AdminApproveDoctorView --|> APIView
+    class DoctorListView {
+        +authentication_classes
+        +permission_classes
+        +serializer_class
+        +get_queryset()
+    }
+    class ListAPIView
+    DoctorListView --|> ListAPIView
+    class AdminDoctorListView {
+        +authentication_classes
+        +permission_classes
+        +serializer_class
+        +get_queryset()
+    }
+    class ListAPIView
+    AdminDoctorListView --|> ListAPIView
+    class DoctorDetailView {
+        +authentication_classes
+        +permission_classes
+        +serializer_class
+        +queryset
+        +lookup_field
+        +lookup_url_kwarg
+    }
+    class RetrieveAPIView
+    DoctorDetailView --|> RetrieveAPIView
+    class DoctorContactView {
+        +authentication_classes
+        +permission_classes
+        +get()
+    }
+    class APIView
+    DoctorContactView --|> APIView
+    class PatientDoctorLinkView {
+        +authentication_classes
+        +permission_classes
+        +post()
+    }
+    class APIView
+    PatientDoctorLinkView --|> APIView
+    class DoctorPatientListView {
+        +authentication_classes
+        +permission_classes
+        +serializer_class
+        +get_queryset()
+        +get_serializer_context()
+    }
+    class ListAPIView
+    DoctorPatientListView --|> ListAPIView
+    class DoctorPatientDetailView {
+        +authentication_classes
+        +permission_classes
+        +get()
+    }
+    class APIView
+    DoctorPatientDetailView --|> APIView
+    class DoctorPatientMoodHistoryView {
+        +authentication_classes
+        +permission_classes
+        +serializer_class
+        +get_queryset()
+    }
+    class ListAPIView
+    DoctorPatientMoodHistoryView --|> ListAPIView
+    class DoctorPatientJournalHistoryView {
+        +authentication_classes
+        +permission_classes
+        +serializer_class
+        +get_queryset()
+    }
+    class ListAPIView
+    DoctorPatientJournalHistoryView --|> ListAPIView
+    class DoctorPatientAnalysisListView {
+        +authentication_classes
+        +permission_classes
+        +serializer_class
+        +get_queryset()
+    }
+    class ListAPIView
+    DoctorPatientAnalysisListView --|> ListAPIView
+    class DoctorPatientRequestListView {
+        +authentication_classes
+        +permission_classes
+        +serializer_class
+        +get_queryset()
+    }
+    class ListAPIView
+    DoctorPatientRequestListView --|> ListAPIView
+    class DoctorRequestActionView {
+        +authentication_classes
+        +permission_classes
+        +post()
+    }
+    class APIView
+    DoctorRequestActionView --|> APIView
+    class DoctorRatingListView {
+        +authentication_classes
+        +permission_classes
+        +serializer_class
+        +get_queryset()
+        +perform_create()
+    }
+    class ListCreateAPIView
+    DoctorRatingListView --|> ListCreateAPIView
+    class SuggestDoctorView {
+        +authentication_classes
+        +permission_classes
+        +get()
+    }
+    class APIView
+    SuggestDoctorView --|> APIView
+    class ChatbotConversationView {
+        +authentication_classes
+        +permission_classes
+        +get()
+    }
+    class APIView
+    ChatbotConversationView --|> APIView
+    class ChatbotMessageView {
+        +authentication_classes
+        +permission_classes
+        +post()
+    }
+    class APIView
+    ChatbotMessageView --|> APIView
+    class IsUserPermission {
+        +has_permission()
+    }
+    class BasePermission
+    IsUserPermission --|> BasePermission
+    class IsDoctorPermission {
+        +has_permission()
+    }
+    class BasePermission
+    IsDoctorPermission --|> BasePermission
+    class UserNotificationListView {
+        +authentication_classes
+        +permission_classes
+        +get_queryset()
+        +list()
+    }
+    class ListAPIView
+    UserNotificationListView --|> ListAPIView
+    class UserNotificationMarkReadView {
+        +authentication_classes
+        +permission_classes
+        +post()
+    }
+    class APIView
+    UserNotificationMarkReadView --|> APIView
+    class UserNotificationDeleteView {
+        +authentication_classes
+        +permission_classes
+        +delete()
+    }
+    class APIView
+    UserNotificationDeleteView --|> APIView
+    class DoctorNotificationListView {
+        +authentication_classes
+        +permission_classes
+        +get_queryset()
+        +list()
+    }
+    class ListAPIView
+    DoctorNotificationListView --|> ListAPIView
+    class DoctorNotificationMarkReadView {
+        +authentication_classes
+        +permission_classes
+        +post()
+    }
+    class APIView
+    DoctorNotificationMarkReadView --|> APIView
+    class DoctorNotificationDeleteView {
+        +authentication_classes
+        +permission_classes
+        +delete()
+    }
+    class APIView
+    DoctorNotificationDeleteView --|> APIView
+    class ConversationListView {
+        +serializer_class
+        +authentication_classes
+        +permission_classes
+        +get_queryset()
+    }
+    class ListAPIView
+    ConversationListView --|> ListAPIView
+    class MessageListView {
+        +serializer_class
+        +authentication_classes
+        +permission_classes
+        +get_queryset()
+    }
+    class ListAPIView
+    MessageListView --|> ListAPIView
+            </div>
+        </div>
+    </div>
+    
+    <div>
+        <h2>4. Services & Consumers (الخدمات)</h2>
+        <div class="zoom-controls">
+            <button class="zoom-in">تكبير (+)</button>
+            <button class="zoom-out">تصغير (-)</button>
+            <button class="zoom-reset">إعادة الضبط</button>
+        </div>
+        <div class="mermaid-container">
+            <div class="mermaid mermaid-diagram" id="diagram-4">
+classDiagram
+    direction LR
+    class CustomTokenAuthentication {
+        +authenticate()
+    }
+    class BaseAuthentication
+    CustomTokenAuthentication --|> BaseAuthentication
+    class Command {
+        +help
+        +handle()
+    }
+    class BaseCommand
+    Command --|> BaseCommand
+    class Command {
+        +help
+        +handle()
+    }
+    class BaseCommand
+    Command --|> BaseCommand
+    class AnalysisService {
+        +_fetch_user_data()
+        +generate_analysis()
+    }
+    class AIService {
+        +__init__()
+        +get_response()
+    }
+    class Storage {
+        +__init__()
+        +_filepath()
+        +_load_json()
+        +_save_json()
+        +save_user()
+        +load_user()
+        +save_mood_entry()
+        +load_mood_entries()
+        +load_all_mood_entries()
+        +save_questionnaire_response()
+        +load_questionnaire_responses()
+        +load_all_questionnaire_responses()
+        +save_daily_analysis()
+        +load_daily_analyses()
+        +save_fifteen_day_analysis()
+        +load_fifteen_day_analyses()
+        +save_thirty_day_analysis()
+        +load_thirty_day_analyses()
+        +save_adaptive_state()
+        +load_adaptive_state()
+        +clear_all_data()
+        +clear_user_data()
+    }
+    class JournalAnalysisEngine {
+        +__init__()
+        +analyze()
+    }
+    class ChatConsumer {
+        +get_user_from_token()
+        +verify_conversation_access()
+        +save_message()
+        +mark_message_as_seen()
+    }
+    class AsyncWebsocketConsumer
+    ChatConsumer --|> AsyncWebsocketConsumer
+            </div>
+        </div>
+    </div>
+    
+    <script type="module">
+        import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+        mermaid.initialize({ startOnLoad: true, theme: 'default', securityLevel: 'loose', logLevel: 1, class: {useMaxWidth: false} });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const containers = document.querySelectorAll('.mermaid-diagram');
+            containers.forEach(targetNode => {
+                let panZoomInstance = null;
+                const observer = new MutationObserver((mutationsList, observer) => {
+                    const svg = targetNode.querySelector('svg');
+                    if (svg && !panZoomInstance) {
+                        svg.style.width = '100%'; svg.style.height = '100%'; svg.style.maxWidth = 'none';
+                        panZoomInstance = svgPanZoom(svg, { zoomEnabled: true, controlIconsEnabled: false, fit: true, center: true, minZoom: 0.1, maxZoom: 20 });
+                        
+                        const parent = targetNode.closest('.mermaid-container').parentElement;
+                        parent.querySelector('.zoom-in').addEventListener('click', () => panZoomInstance.zoomIn());
+                        parent.querySelector('.zoom-out').addEventListener('click', () => panZoomInstance.zoomOut());
+                        parent.querySelector('.zoom-reset').addEventListener('click', () => { panZoomInstance.resetZoom(); panZoomInstance.center(); });
+                    }
+                });
+                observer.observe(targetNode, { childList: true, subtree: true });
+            });
+        });
+    </script>
+</body>
+</html>
