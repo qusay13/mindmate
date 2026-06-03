@@ -177,3 +177,130 @@ class DoctorNotificationDeleteView(views.APIView):
             return Response({'message': 'Notification deleted.'}, status=status.HTTP_204_NO_CONTENT)
         except DoctorNotification.DoesNotExist:
             return Response({'error': 'Notification not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+
+# ============================================================
+# WEB PUSH & PREFERENCES MANAGEMENT
+# ============================================================
+
+class PushSubscriptionView(views.APIView):
+    """
+    POST /api/notifications/subscribe/
+    Body: { "endpoint": "...", "keys": { "p256dh": "...", "auth": "..." } }
+    """
+    authentication_classes = [CustomTokenAuthentication]
+    permission_classes     = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        endpoint = request.data.get('endpoint')
+        keys = request.data.get('keys', {})
+        p256dh = keys.get('p256dh')
+        auth = keys.get('auth')
+
+        if not endpoint or not p256dh or not auth:
+            return Response({'error': 'endpoint, p256dh, and auth are required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user_agent = request.META.get('HTTP_USER_AGENT', '')
+        user = request.user
+        
+        from accounts.models import User, Doctor
+        from .models import PushSubscription
+
+        sub_kwargs = {
+            'endpoint': endpoint,
+            'defaults': {
+                'p256dh': p256dh,
+                'auth': auth,
+                'user_agent': user_agent,
+            }
+        }
+
+        if isinstance(user, User):
+            sub_kwargs['user'] = user
+        elif isinstance(user, Doctor):
+            sub_kwargs['doctor'] = user
+        else:
+            return Response({'error': 'Only users and doctors can register push subscriptions'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Update or create dynamically linked to secure endpoint
+        sub, created = PushSubscription.objects.update_or_create(
+            endpoint=endpoint,
+            defaults={
+                'user': sub_kwargs.get('user'),
+                'doctor': sub_kwargs.get('doctor'),
+                'p256dh': p256dh,
+                'auth': auth,
+                'user_agent': user_agent,
+            }
+        )
+
+        return Response({'message': 'Push subscription registered successfully', 'created': created}, status=status.HTTP_201_CREATED)
+
+
+class PushUnsubscribeView(views.APIView):
+    """
+    POST /api/notifications/unsubscribe/
+    Body: { "endpoint": "..." }
+    """
+    authentication_classes = [CustomTokenAuthentication]
+    permission_classes     = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        endpoint = request.data.get('endpoint')
+        if not endpoint:
+            return Response({'error': 'endpoint is required'}, status=status.HTTP_400_BAD_REQUEST)
+
+        user = request.user
+        from accounts.models import User, Doctor
+        from .models import PushSubscription
+
+        qs = PushSubscription.objects.filter(endpoint=endpoint)
+        if isinstance(user, User):
+            qs = qs.filter(user=user)
+        elif isinstance(user, Doctor):
+            qs = qs.filter(doctor=user)
+        else:
+            return Response({'error': 'Unauthorized role'}, status=status.HTTP_403_FORBIDDEN)
+
+        deleted, _ = qs.delete()
+        return Response({'message': 'Push subscription removed successfully', 'deleted_count': deleted}, status=status.HTTP_200_OK)
+
+
+class NotificationPreferencesView(views.APIView):
+    """
+    GET /api/notifications/preferences/
+    PATCH /api/notifications/preferences/
+    Body: { "email_notifications": true, "push_notifications": false }
+    """
+    authentication_classes = [CustomTokenAuthentication]
+    permission_classes     = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        return Response({
+            'email_notifications': getattr(user, 'email_notifications', True),
+            'push_notifications': getattr(user, 'push_notifications', True)
+        })
+
+    def patch(self, request):
+        user = request.user
+        email_pref = request.data.get('email_notifications')
+        push_pref = request.data.get('push_notifications')
+
+        update_fields = []
+        if email_pref is not None:
+            user.email_notifications = bool(email_pref)
+            update_fields.append('email_notifications')
+        if push_pref is not None:
+            user.push_notifications = bool(push_pref)
+            update_fields.append('push_notifications')
+
+        if update_fields:
+            user.save(update_fields=update_fields)
+
+        return Response({
+            'message': 'Preferences updated successfully',
+            'email_notifications': getattr(user, 'email_notifications', True),
+            'push_notifications': getattr(user, 'push_notifications', True)
+        }, status=status.HTTP_200_OK)
+

@@ -51,6 +51,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     initial_survey_completed   = models.BooleanField(default=False)
     data_collection_start_date = models.DateField(blank=True, null=True)
     deleted_at                 = models.DateTimeField(blank=True, null=True)
+    email_notifications        = models.BooleanField(default=True)
+    push_notifications         = models.BooleanField(default=True)
     created_at                 = models.DateTimeField(auto_now_add=True)
     updated_at                 = models.DateTimeField(auto_now=True)
     is_staff                   = models.BooleanField(default=False)
@@ -106,11 +108,13 @@ class Doctor(AbstractBaseUser):
     cv_file_path     = models.FileField(upload_to='cvs/', blank=True, null=True)
     status           = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     rejection_reason = models.TextField(blank=True, null=True)
-    is_active        = models.BooleanField(default=True)
-    approved_at      = models.DateTimeField(blank=True, null=True)
-    deleted_at       = models.DateTimeField(blank=True, null=True)
-    created_at       = models.DateTimeField(auto_now_add=True)
-    updated_at       = models.DateTimeField(auto_now=True)
+    is_active           = models.BooleanField(default=True)
+    email_notifications = models.BooleanField(default=True)
+    push_notifications  = models.BooleanField(default=True)
+    approved_at         = models.DateTimeField(blank=True, null=True)
+    deleted_at          = models.DateTimeField(blank=True, null=True)
+    created_at          = models.DateTimeField(auto_now_add=True)
+    updated_at          = models.DateTimeField(auto_now=True)
 
     USERNAME_FIELD  = 'email'
     REQUIRED_FIELDS = []

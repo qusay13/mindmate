@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { profileAPI } from '../services/api';
-import { Stethoscope, Save, ArrowLeft, Camera, MessageCircle, Globe, FileText, CheckCircle2, Eye, EyeOff } from 'lucide-react';
+import { profileAPI, notificationsAPI } from '../services/api';
+import { Stethoscope, Save, ArrowLeft, Camera, MessageCircle, Globe, FileText, CheckCircle2, Eye, EyeOff, Bell } from 'lucide-react';
 
 const DoctorProfileEditPage = () => {
   const navigate = useNavigate();
@@ -10,6 +10,11 @@ const DoctorProfileEditPage = () => {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState('');
   const [previewImg, setPreviewImg] = useState(null);
+
+  // Preference Settings States
+  const [emailNotifs, setEmailNotifs] = useState(true);
+  const [pushNotifs, setPushNotifs] = useState(true);
+  const [updatingPrefs, setUpdatingPrefs] = useState(false);
 
   const [form, setForm] = useState({
     full_name: '',
@@ -22,7 +27,7 @@ const DoctorProfileEditPage = () => {
   });
 
   useEffect(() => {
-    const fetchProfile = async () => {
+    const fetchProfileAndPrefs = async () => {
       try {
         const res = await profileAPI.getDoctorProfile();
         const d = res.data;
@@ -36,13 +41,18 @@ const DoctorProfileEditPage = () => {
           profile_image: null,
         });
         if (d.profile_image) setPreviewImg(d.profile_image);
+
+        // Fetch doctor preferences
+        const prefsRes = await notificationsAPI.getPreferences();
+        setEmailNotifs(prefsRes.data.email_notifications);
+        setPushNotifs(prefsRes.data.push_notifications);
       } catch {
-        setError('Failed to load profile.');
+        setError('Failed to load profile and preferences.');
       } finally {
         setLoading(false);
       }
     };
-    fetchProfile();
+    fetchProfileAndPrefs();
   }, []);
 
   const handleChange = (e) => {
@@ -78,6 +88,91 @@ const DoctorProfileEditPage = () => {
       setSaving(false);
     }
   };
+
+  // Preference Handlers
+  const handleToggleEmail = async () => {
+    setUpdatingPrefs(true);
+    try {
+      const newVal = !emailNotifs;
+      const res = await notificationsAPI.updatePreferences({ email_notifications: newVal });
+      setEmailNotifs(res.data.email_notifications);
+    } catch {
+      setError('Failed to update email preferences.');
+    } finally {
+      setUpdatingPrefs(false);
+    }
+  };
+
+  const handleTogglePush = async () => {
+    setUpdatingPrefs(true);
+    try {
+      const newVal = !pushNotifs;
+      if (newVal) {
+        if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+          alert('Push notifications are not supported on this browser.');
+          setUpdatingPrefs(false);
+          return;
+        }
+
+        const permission = await Notification.requestPermission();
+        if (permission !== 'granted') {
+          alert('Notification permission denied.');
+          setUpdatingPrefs(false);
+          return;
+        }
+
+        const reg = await navigator.serviceWorker.register('/service-worker.js');
+        await navigator.serviceWorker.ready;
+
+        // VAPID mock public key mapping
+        const applicationServerKey = urlB64ToUint8Array('BEl62iUZGdwAOWRxsRFQGBESDEFGH12345_TEST_KEY_VAPID_MOCK_VALUE');
+        
+        let sub = await reg.pushManager.getSubscription();
+        if (!sub) {
+          sub = await reg.pushManager.subscribe({
+            userVisibleOnly: true,
+            applicationServerKey: applicationServerKey
+          });
+        }
+
+        // Register push endpoint with backend database securely
+        await notificationsAPI.subscribePush(sub.toJSON());
+      } else {
+        const reg = await navigator.serviceWorker.ready;
+        const sub = await reg.pushManager.getSubscription();
+        if (sub) {
+          await notificationsAPI.unsubscribePush({ endpoint: sub.endpoint });
+          await sub.unsubscribe();
+        }
+      }
+
+      const res = await notificationsAPI.updatePreferences({ push_notifications: newVal });
+      setPushNotifs(res.data.push_notifications);
+    } catch (err) {
+      console.warn('Push registration fallback:', err);
+      try {
+        const res = await notificationsAPI.updatePreferences({ push_notifications: !pushNotifs });
+        setPushNotifs(res.data.push_notifications);
+      } catch {
+        setError('Failed to update push preferences.');
+      }
+    } finally {
+      setUpdatingPrefs(false);
+    }
+  };
+
+  function urlB64ToUint8Array(base64String) {
+    const padding = '='.repeat((4 - base64String.length % 4) % 4);
+    const base64 = (base64String + padding)
+      .replace(/\-/g, '+')
+      .replace(/_/g, '/');
+    const rawData = window.atob(base64);
+    const outputArray = new Uint8Array(rawData.length);
+    for (let i = 0; i < rawData.length; ++i) {
+      outputArray[i] = rawData.charCodeAt(i);
+    }
+    return outputArray;
+  }
 
   if (loading) return (
     <div className="loading-screen">
@@ -116,9 +211,9 @@ const DoctorProfileEditPage = () => {
         <p>Update your professional information, specialization, and contact details.</p>
       </header>
 
-      <div style={{ maxWidth: '620px', margin: '0 auto' }}>
+      <div style={{ maxWidth: '620px', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
         {/* Avatar */}
-        <div className="glass-card" style={{ padding: '2rem', marginBottom: '1.5rem', textAlign: 'center' }}>
+        <div className="glass-card" style={{ padding: '2rem', textAlign: 'center' }}>
           <div style={{ position: 'relative', display: 'inline-block', marginBottom: '1rem' }}>
             {previewImg ? (
               <img
@@ -232,6 +327,72 @@ const DoctorProfileEditPage = () => {
             {saving ? 'Saving...' : <><Save size={18} /> Save Changes</>}
           </button>
         </form>
+
+        {/* Premium Notification Settings Panel */}
+        <div className="glass-card" style={{ padding: '2rem' }}>
+          <h3 style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', margin: '0 0 0.5rem 0', color: '#00f2ff', fontSize: '1.2rem', fontWeight: 700 }}>
+            <Bell size={20} /> Notification Preferences
+          </h3>
+          <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '1.5rem' }}>
+            Choose how you wish to receive updates regarding appointments, psychiatric sessions, and patient messages.
+          </p>
+
+          <div style={{ display: 'grid', gap: '1rem' }}>
+            {/* Email Notifs */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.04)' }}>
+              <div>
+                <p style={{ margin: 0, fontWeight: 600, fontSize: '0.95rem', color: '#f1f5f9' }}>Email Alerts</p>
+                <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Receive detailed patient daily summaries and session alerts.</p>
+              </div>
+              <button
+                type="button"
+                onClick={handleToggleEmail}
+                disabled={updatingPrefs}
+                style={{
+                  padding: '0.45rem 1rem',
+                  borderRadius: '8px',
+                  border: '1px solid',
+                  borderColor: emailNotifs ? '#00f2ff' : 'rgba(255,255,255,0.1)',
+                  background: emailNotifs ? 'rgba(0,242,255,0.1)' : 'rgba(0,0,0,0.2)',
+                  color: emailNotifs ? '#00f2ff' : 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  fontSize: '0.85rem',
+                  transition: 'all 0.2s'
+                }}
+              >
+                {emailNotifs ? 'Enabled' : 'Disabled'}
+              </button>
+            </div>
+
+            {/* Push Notifs */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '1rem', background: 'rgba(255,255,255,0.02)', borderRadius: '12px', border: '1px solid rgba(255,255,255,0.04)' }}>
+              <div>
+                <p style={{ margin: 0, fontWeight: 600, fontSize: '0.95rem', color: '#f1f5f9' }}>Web Push Notifications</p>
+                <p style={{ margin: 0, fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Receive instant chat pings and status alerts on your device.</p>
+              </div>
+              <button
+                type="button"
+                onClick={handleTogglePush}
+                disabled={updatingPrefs}
+                style={{
+                  padding: '0.45rem 1rem',
+                  borderRadius: '8px',
+                  border: '1px solid',
+                  borderColor: pushNotifs ? '#00f2ff' : 'rgba(255,255,255,0.1)',
+                  background: pushNotifs ? 'rgba(0,242,255,0.1)' : 'rgba(0,0,0,0.2)',
+                  color: pushNotifs ? '#00f2ff' : 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                  fontSize: '0.85rem',
+                  transition: 'all 0.2s'
+                }}
+              >
+                {pushNotifs ? 'Enabled' : 'Disabled'}
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );

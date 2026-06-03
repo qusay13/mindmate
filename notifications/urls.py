@@ -6,6 +6,9 @@ from .views import (
     DoctorNotificationListView,
     DoctorNotificationMarkReadView,
     DoctorNotificationDeleteView,
+    PushSubscriptionView,
+    PushUnsubscribeView,
+    NotificationPreferencesView,
 )
 
 urlpatterns = [
@@ -18,4 +21,9 @@ urlpatterns = [
     path('doctor/',                        DoctorNotificationListView.as_view(),    name='doctor-notifications-list'),
     path('doctor/mark-read/',              DoctorNotificationMarkReadView.as_view(),name='doctor-notifications-mark-read'),
     path('doctor/<int:notification_id>/',  DoctorNotificationDeleteView.as_view(),  name='doctor-notification-delete'),
+
+    # ── Web Push & Preferences ──────────────────────────────
+    path('subscribe/',                     PushSubscriptionView.as_view(),         name='push-subscribe'),
+    path('unsubscribe/',                   PushUnsubscribeView.as_view(),           name='push-unsubscribe'),
+    path('preferences/',                   NotificationPreferencesView.as_view(),   name='notification-preferences'),
 ]

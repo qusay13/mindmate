@@ -96,6 +96,10 @@ export const chatAPI = {
 export const notificationsAPI = {
   getNotifications: (role = 'user') => api.get(`notifications/${role}/`),
   markAllRead: (role = 'user') => api.post(`notifications/${role}/mark-read/`),
+  subscribePush: (data) => api.post('notifications/subscribe/', data),
+  unsubscribePush: (data) => api.post('notifications/unsubscribe/', data),
+  getPreferences: () => api.get('notifications/preferences/'),
+  updatePreferences: (data) => api.patch('notifications/preferences/', data),
 };
 
 export const WS_BASE_URL = 'ws://localhost:8000/ws/';
