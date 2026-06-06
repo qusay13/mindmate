@@ -17,6 +17,11 @@ class Conversation(models.Model):
         related_name='doctor_conversations'
     )
 
+    is_archived_by_patient = models.BooleanField(default=False)
+    is_archived_by_doctor = models.BooleanField(default=False)
+    is_deleted_by_patient = models.BooleanField(default=False)
+    is_deleted_by_doctor = models.BooleanField(default=False)
+
     created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
@@ -54,6 +59,9 @@ class Message(models.Model):
 
     class Meta:
         ordering = ['created_at']
+        indexes = [
+            models.Index(fields=['conversation', '-created_at']),
+        ]
 
     def __str__(self):
         return f"Message {self.id} in {self.conversation}"

@@ -1,0 +1,223 @@
+Creating test database for alias 'default'...
+/home/qusay/Desktop/projects/mindmate/chatbot/services/ai_service.py:3: FutureWarning: 
+
+All support for the `google.generativeai` package has ended. It will no longer be receiving 
+updates or bug fixes. Please switch to the `google.genai` package as soon as possible.
+See README for more details:
+
+https://github.com/google-gemini/deprecated-generative-ai-python/blob/main/README.md
+
+  import google.generativeai as genai
+E..EEE
+======================================================================
+ERROR: test_websocket_handshake_success (chat.tests.ChatWebSocketTests.test_websocket_handshake_success)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/qusay/Desktop/projects/mindmate/venv/lib64/python3.14/site-packages/asgiref/testing.py", line 110, in receive_output
+    return await self.output_queue.get()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib64/python3.14/asyncio/queues.py", line 186, in get
+    await getter
+asyncio.exceptions.CancelledError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/qusay/Desktop/projects/mindmate/chat/tests.py", line 95, in test_websocket_handshake_success
+    async_to_sync(run)()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "/home/qusay/Desktop/projects/mindmate/venv/lib64/python3.14/site-packages/asgiref/sync.py", line 325, in __call__
+    return call_result.result()
+           ~~~~~~~~~~~~~~~~~~^^
+  File "/usr/lib64/python3.14/concurrent/futures/_base.py", line 443, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "/usr/lib64/python3.14/concurrent/futures/_base.py", line 395, in __get_result
+    raise self._exception
+  File "/home/qusay/Desktop/projects/mindmate/venv/lib64/python3.14/site-packages/asgiref/sync.py", line 365, in main_wrap
+    result = await awaitable
+             ^^^^^^^^^^^^^^^
+  File "/home/qusay/Desktop/projects/mindmate/chat/tests.py", line 77, in run
+    event = await communicator.receive_json_from()
+            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/qusay/Desktop/projects/mindmate/venv/lib64/python3.14/site-packages/channels/testing/websocket.py", line 104, in receive_json_from
+    payload = await self.receive_from(timeout)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/qusay/Desktop/projects/mindmate/venv/lib64/python3.14/site-packages/channels/testing/websocket.py", line 79, in receive_from
+    response = await self.receive_output(timeout)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/qusay/Desktop/projects/mindmate/venv/lib64/python3.14/site-packages/channels/testing/application.py", line 17, in receive_output
+    return await super().receive_output(timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/qusay/Desktop/projects/mindmate/venv/lib64/python3.14/site-packages/asgiref/testing.py", line 121, in receive_output
+    raise e
+  File "/home/qusay/Desktop/projects/mindmate/venv/lib64/python3.14/site-packages/asgiref/testing.py", line 109, in receive_output
+    async with async_timeout(timeout):
+               ~~~~~~~~~~~~~^^^^^^^^^
+  File "/home/qusay/Desktop/projects/mindmate/venv/lib64/python3.14/site-packages/asgiref/timeout.py", line 71, in __aexit__
+    self._do_exit(exc_type)
+    ~~~~~~~~~~~~~^^^^^^^^^^
+  File "/home/qusay/Desktop/projects/mindmate/venv/lib64/python3.14/site-packages/asgiref/timeout.py", line 108, in _do_exit
+    raise asyncio.TimeoutError
+TimeoutError
+
+======================================================================
+ERROR: test_websocket_messages_read_seen (chat.tests.ChatWebSocketTests.test_websocket_messages_read_seen)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/qusay/Desktop/projects/mindmate/venv/lib64/python3.14/site-packages/asgiref/testing.py", line 110, in receive_output
+    return await self.output_queue.get()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib64/python3.14/asyncio/queues.py", line 186, in get
+    await getter
+asyncio.exceptions.CancelledError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/qusay/Desktop/projects/mindmate/chat/tests.py", line 278, in test_websocket_messages_read_seen
+    async_to_sync(run)()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "/home/qusay/Desktop/projects/mindmate/venv/lib64/python3.14/site-packages/asgiref/sync.py", line 325, in __call__
+    return call_result.result()
+           ~~~~~~~~~~~~~~~~~~^^
+  File "/usr/lib64/python3.14/concurrent/futures/_base.py", line 443, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "/usr/lib64/python3.14/concurrent/futures/_base.py", line 395, in __get_result
+    raise self._exception
+  File "/home/qusay/Desktop/projects/mindmate/venv/lib64/python3.14/site-packages/asgiref/sync.py", line 365, in main_wrap
+    result = await awaitable
+             ^^^^^^^^^^^^^^^
+  File "/home/qusay/Desktop/projects/mindmate/chat/tests.py", line 244, in run
+    await doctor_comm.receive_json_from()
+  File "/home/qusay/Desktop/projects/mindmate/venv/lib64/python3.14/site-packages/channels/testing/websocket.py", line 104, in receive_json_from
+    payload = await self.receive_from(timeout)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/qusay/Desktop/projects/mindmate/venv/lib64/python3.14/site-packages/channels/testing/websocket.py", line 79, in receive_from
+    response = await self.receive_output(timeout)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/qusay/Desktop/projects/mindmate/venv/lib64/python3.14/site-packages/channels/testing/application.py", line 17, in receive_output
+    return await super().receive_output(timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/qusay/Desktop/projects/mindmate/venv/lib64/python3.14/site-packages/asgiref/testing.py", line 121, in receive_output
+    raise e
+  File "/home/qusay/Desktop/projects/mindmate/venv/lib64/python3.14/site-packages/asgiref/testing.py", line 109, in receive_output
+    async with async_timeout(timeout):
+               ~~~~~~~~~~~~~^^^^^^^^^
+  File "/home/qusay/Desktop/projects/mindmate/venv/lib64/python3.14/site-packages/asgiref/timeout.py", line 71, in __aexit__
+    self._do_exit(exc_type)
+    ~~~~~~~~~~~~~^^^^^^^^^^
+  File "/home/qusay/Desktop/projects/mindmate/venv/lib64/python3.14/site-packages/asgiref/timeout.py", line 108, in _do_exit
+    raise asyncio.TimeoutError
+TimeoutError
+
+======================================================================
+ERROR: test_websocket_send_and_receive_message (chat.tests.ChatWebSocketTests.test_websocket_send_and_receive_message)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/qusay/Desktop/projects/mindmate/venv/lib64/python3.14/site-packages/asgiref/testing.py", line 110, in receive_output
+    return await self.output_queue.get()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib64/python3.14/asyncio/queues.py", line 186, in get
+    await getter
+asyncio.exceptions.CancelledError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/qusay/Desktop/projects/mindmate/chat/tests.py", line 187, in test_websocket_send_and_receive_message
+    async_to_sync(run)()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "/home/qusay/Desktop/projects/mindmate/venv/lib64/python3.14/site-packages/asgiref/sync.py", line 325, in __call__
+    return call_result.result()
+           ~~~~~~~~~~~~~~~~~~^^
+  File "/usr/lib64/python3.14/concurrent/futures/_base.py", line 443, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "/usr/lib64/python3.14/concurrent/futures/_base.py", line 395, in __get_result
+    raise self._exception
+  File "/home/qusay/Desktop/projects/mindmate/venv/lib64/python3.14/site-packages/asgiref/sync.py", line 365, in main_wrap
+    result = await awaitable
+             ^^^^^^^^^^^^^^^
+  File "/home/qusay/Desktop/projects/mindmate/chat/tests.py", line 143, in run
+    await patient_comm.receive_json_from()
+  File "/home/qusay/Desktop/projects/mindmate/venv/lib64/python3.14/site-packages/channels/testing/websocket.py", line 104, in receive_json_from
+    payload = await self.receive_from(timeout)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/qusay/Desktop/projects/mindmate/venv/lib64/python3.14/site-packages/channels/testing/websocket.py", line 79, in receive_from
+    response = await self.receive_output(timeout)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/qusay/Desktop/projects/mindmate/venv/lib64/python3.14/site-packages/channels/testing/application.py", line 17, in receive_output
+    return await super().receive_output(timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/qusay/Desktop/projects/mindmate/venv/lib64/python3.14/site-packages/asgiref/testing.py", line 121, in receive_output
+    raise e
+  File "/home/qusay/Desktop/projects/mindmate/venv/lib64/python3.14/site-packages/asgiref/testing.py", line 109, in receive_output
+    async with async_timeout(timeout):
+               ~~~~~~~~~~~~~^^^^^^^^^
+  File "/home/qusay/Desktop/projects/mindmate/venv/lib64/python3.14/site-packages/asgiref/timeout.py", line 71, in __aexit__
+    self._do_exit(exc_type)
+    ~~~~~~~~~~~~~^^^^^^^^^^
+  File "/home/qusay/Desktop/projects/mindmate/venv/lib64/python3.14/site-packages/asgiref/timeout.py", line 108, in _do_exit
+    raise asyncio.TimeoutError
+TimeoutError
+
+======================================================================
+ERROR: test_websocket_typing_indicator (chat.tests.ChatWebSocketTests.test_websocket_typing_indicator)
+----------------------------------------------------------------------
+Traceback (most recent call last):
+  File "/home/qusay/Desktop/projects/mindmate/venv/lib64/python3.14/site-packages/asgiref/testing.py", line 110, in receive_output
+    return await self.output_queue.get()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib64/python3.14/asyncio/queues.py", line 186, in get
+    await getter
+asyncio.exceptions.CancelledError
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/qusay/Desktop/projects/mindmate/chat/tests.py", line 223, in test_websocket_typing_indicator
+    async_to_sync(run)()
+    ~~~~~~~~~~~~~~~~~~^^
+  File "/home/qusay/Desktop/projects/mindmate/venv/lib64/python3.14/site-packages/asgiref/sync.py", line 325, in __call__
+    return call_result.result()
+           ~~~~~~~~~~~~~~~~~~^^
+  File "/usr/lib64/python3.14/concurrent/futures/_base.py", line 443, in result
+    return self.__get_result()
+           ~~~~~~~~~~~~~~~~~^^
+  File "/usr/lib64/python3.14/concurrent/futures/_base.py", line 395, in __get_result
+    raise self._exception
+  File "/home/qusay/Desktop/projects/mindmate/venv/lib64/python3.14/site-packages/asgiref/sync.py", line 365, in main_wrap
+    result = await awaitable
+             ^^^^^^^^^^^^^^^
+  File "/home/qusay/Desktop/projects/mindmate/chat/tests.py", line 196, in run
+    await patient_comm.receive_json_from()
+  File "/home/qusay/Desktop/projects/mindmate/venv/lib64/python3.14/site-packages/channels/testing/websocket.py", line 104, in receive_json_from
+    payload = await self.receive_from(timeout)
+              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/qusay/Desktop/projects/mindmate/venv/lib64/python3.14/site-packages/channels/testing/websocket.py", line 79, in receive_from
+    response = await self.receive_output(timeout)
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/qusay/Desktop/projects/mindmate/venv/lib64/python3.14/site-packages/channels/testing/application.py", line 17, in receive_output
+    return await super().receive_output(timeout)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/qusay/Desktop/projects/mindmate/venv/lib64/python3.14/site-packages/asgiref/testing.py", line 121, in receive_output
+    raise e
+  File "/home/qusay/Desktop/projects/mindmate/venv/lib64/python3.14/site-packages/asgiref/testing.py", line 109, in receive_output
+    async with async_timeout(timeout):
+               ~~~~~~~~~~~~~^^^^^^^^^
+  File "/home/qusay/Desktop/projects/mindmate/venv/lib64/python3.14/site-packages/asgiref/timeout.py", line 71, in __aexit__
+    self._do_exit(exc_type)
+    ~~~~~~~~~~~~~^^^^^^^^^^
+  File "/home/qusay/Desktop/projects/mindmate/venv/lib64/python3.14/site-packages/asgiref/timeout.py", line 108, in _do_exit
+    raise asyncio.TimeoutError
+TimeoutError
+
+----------------------------------------------------------------------
+Ran 6 tests in 10.170s
+
+FAILED (errors=4)
+Destroying test database for alias 'default'...
+Found 6 test(s).
+System check identified no issues (0 silenced).

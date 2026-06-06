@@ -5,6 +5,7 @@ from channels.db import database_sync_to_async
 from django.utils import timezone
 from .models import Conversation, Message
 from accounts.models import UserSession
+from .utils import set_user_online, set_user_offline, check_rate_limit
 
 
 class ChatConsumer(AsyncWebsocketConsumer):
@@ -42,9 +43,39 @@ class ChatConsumer(AsyncWebsocketConsumer):
         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
         await self.accept()
 
+        # Update online status in Redis cache
+        user_id = str(user.user_id) if hasattr(user, 'user_id') else str(user.doctor_id)
+        just_went_online = await self.async_set_user_online(user)
+
+        # Broadcast online status if they just went online
+        if just_went_online:
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    'type': 'user_status',
+                    'user_id': user_id,
+                    'status': 'online',
+                }
+            )
+
     async def disconnect(self, close_code):
         if hasattr(self, 'room_group_name'):
             await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
+
+        if hasattr(self, 'user'):
+            user_id = str(self.user.user_id) if hasattr(self.user, 'user_id') else str(self.user.doctor_id)
+            just_went_offline = await self.async_set_user_offline(self.user)
+
+            # Broadcast offline status if they just went offline
+            if just_went_offline:
+                await self.channel_layer.group_send(
+                    self.room_group_name,
+                    {
+                        'type': 'user_status',
+                        'user_id': user_id,
+                        'status': 'offline',
+                    }
+                )
 
     async def receive(self, text_data):
         try:
@@ -53,15 +84,39 @@ class ChatConsumer(AsyncWebsocketConsumer):
         except (json.JSONDecodeError, AttributeError):
             return
 
+        sender_id = str(self.user.user_id) if hasattr(self.user, 'user_id') else str(self.user.doctor_id)
+        sender_type = 'user' if hasattr(self.user, 'user_id') else 'doctor'
+
+        # Rate Limiting Check
+        rate_limit_type = None
+        if msg_type == 'message':
+            rate_limit_type = 'message'
+        elif msg_type in ['typing', 'stop_typing']:
+            rate_limit_type = 'typing'
+        elif msg_type in ['read_receipt', 'messages_read']:
+            rate_limit_type = 'read_event'
+
+        if rate_limit_type:
+            is_allowed = await database_sync_to_async(check_rate_limit)(sender_id, rate_limit_type)
+            if not is_allowed:
+                await self.send(text_data=json.dumps({
+                    'type': 'error',
+                    'message': 'Too many messages. Please slow down.'
+                }))
+                return
+
         if msg_type == 'message':
             content = data.get('message', '').strip()
+            message_type = data.get('message_type', 'TEXT')
+            client_msg_id = data.get('client_msg_id')
+
+            if message_type not in [Message.MessageType.TEXT, Message.MessageType.IMAGE, Message.MessageType.FILE]:
+                message_type = 'TEXT'
+
             if not content:
                 return
 
-            msg = await self.save_message(content)
-
-            sender_id   = str(self.user.user_id) if hasattr(self.user, 'user_id') else str(self.user.doctor_id)
-            sender_type = 'user' if hasattr(self.user, 'user_id') else 'doctor'
+            msg = await self.save_message(content, message_type)
 
             await self.channel_layer.group_send(
                 self.room_group_name,
@@ -69,16 +124,24 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     'type':        'chat_message',
                     'id':          str(msg.id),
                     'message':     content,
+                    'message_type': message_type,
                     'sender_type': sender_type,
                     'sender_id':   sender_id,
                     'created_at':  msg.created_at.isoformat(),
                 }
             )
-        
-        elif msg_type == 'typing':
-            is_typing = data.get('is_typing', False)
-            sender_id = str(self.user.user_id) if hasattr(self.user, 'user_id') else str(self.user.doctor_id)
-            
+
+            # Send Message Acknowledgement back to sender
+            await self.send(text_data=json.dumps({
+                'type': 'message_ack',
+                'message_id': str(msg.id),
+                'client_msg_id': client_msg_id,
+                'status': 'saved'
+            }))
+
+        elif msg_type in ['typing', 'stop_typing']:
+            is_typing = (msg_type == 'typing') or data.get('is_typing', False)
+
             await self.channel_layer.group_send(
                 self.room_group_name,
                 {
@@ -87,7 +150,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     'is_typing': is_typing,
                 }
             )
-        
+
         elif msg_type == 'read_receipt':
             message_id = data.get('message_id')
             if message_id:
@@ -100,11 +163,24 @@ class ChatConsumer(AsyncWebsocketConsumer):
                     }
                 )
 
+        elif msg_type == 'messages_read':
+            # Mark all incoming messages in this conversation as seen
+            await self.mark_all_messages_as_seen()
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    'type': 'messages_read',
+                    'conversation_id': self.conversation_id,
+                    'reader_id': sender_id,
+                }
+            )
+
     async def chat_message(self, event):
         await self.send(text_data=json.dumps({
             'type': 'message',
             'id':          event['id'],
             'message':     event['message'],
+            'message_type': event.get('message_type', 'TEXT'),
             'sender_type': event['sender_type'],
             'sender_id':   event['sender_id'],
             'created_at':  event['created_at'],
@@ -126,7 +202,27 @@ class ChatConsumer(AsyncWebsocketConsumer):
             'message_id': event['message_id'],
         }))
 
-    # ── Database helpers ────────────────────────────────────
+    async def user_status(self, event):
+        # Notify clients about online/offline status changes
+        sender_id = str(self.user.user_id) if hasattr(self.user, 'user_id') else str(self.user.doctor_id)
+        if event['user_id'] != sender_id:
+            await self.send(text_data=json.dumps({
+                'type': 'user_status',
+                'user_id': event['user_id'],
+                'status': event['status'],
+            }))
+
+    async def messages_read(self, event):
+        # Notify clients when conversation is marked read via REST or WS
+        sender_id = str(self.user.user_id) if hasattr(self.user, 'user_id') else str(self.user.doctor_id)
+        if event['reader_id'] != sender_id:
+            await self.send(text_data=json.dumps({
+                'type': 'messages_read',
+                'conversation_id': event['conversation_id'],
+                'reader_id': event['reader_id'],
+            }))
+
+    # ── Database & Cache helpers ───────────────────────────
 
     @database_sync_to_async
     def get_user_from_token(self, token):
@@ -157,16 +253,19 @@ class ChatConsumer(AsyncWebsocketConsumer):
             return False
 
     @database_sync_to_async
-    def save_message(self, content):
+    def save_message(self, content, message_type='TEXT'):
         sender_type = 'user'   if hasattr(self.user, 'user_id')   else 'doctor'
         sender_id   = self.user.user_id if hasattr(self.user, 'user_id') else self.user.doctor_id
 
-        msg = Message.objects.create(
-            conversation_id=self.conversation_id,
-            sender_type=sender_type,
-            sender_id=sender_id,
-            content=content,
-        )
+        from django.db import transaction
+        with transaction.atomic():
+            msg = Message.objects.create(
+                conversation_id=self.conversation_id,
+                sender_type=sender_type,
+                sender_id=sender_id,
+                content=content,
+                message_type=message_type,
+            )
 
         try:
             from notifications.services import notify_user, notify_doctor
@@ -175,7 +274,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 notify_doctor(
                     doctor=conv.doctor,
                     title=f"رسالة جديدة من {conv.patient.full_name}",
-                    body=content[:50] + ("..." if len(content) > 50 else ""),
+                    body=content[:50] + ("..." if len(content) > 50 else "") if message_type == 'TEXT' else "[صورة/ملف]",
                     notif_type='new_message',
                     related_entity_type='message'
                 )
@@ -183,7 +282,7 @@ class ChatConsumer(AsyncWebsocketConsumer):
                 notify_user(
                     user=conv.patient,
                     title=f"رسالة جديدة من د. {conv.doctor.full_name}",
-                    body=content[:50] + ("..." if len(content) > 50 else ""),
+                    body=content[:50] + ("..." if len(content) > 50 else "") if message_type == 'TEXT' else "[صورة/ملف]",
                     notif_type='new_message',
                     related_entity_type='message'
                 )
@@ -198,3 +297,26 @@ class ChatConsumer(AsyncWebsocketConsumer):
             Message.objects.filter(id=message_id).update(is_seen=True)
         except Exception as e:
             print(f"Error marking message as seen: {e}")
+
+    @database_sync_to_async
+    def mark_all_messages_as_seen(self):
+        try:
+            sender_type = 'user' if hasattr(self.user, 'user_id') else 'doctor'
+            other_sender_type = 'doctor' if sender_type == 'user' else 'user'
+            from django.db import transaction
+            with transaction.atomic():
+                Message.objects.filter(
+                    conversation_id=self.conversation_id,
+                    sender_type=other_sender_type,
+                    is_seen=False
+                ).update(is_seen=True)
+        except Exception as e:
+            print(f"Error marking all messages as seen: {e}")
+
+    @database_sync_to_async
+    def async_set_user_online(self, user):
+        return set_user_online(user)
+
+    @database_sync_to_async
+    def async_set_user_offline(self, user):
+        return set_user_offline(user)
