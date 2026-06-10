@@ -1,0 +1,8 @@
+{
+    "python.analysis.extraPaths": [
+        "./araBERT_git/Compressed"
+    ],
+    "python.autoComplete.extraPaths": [
+        "./araBERT_git/Compressed"
+    ]
+}

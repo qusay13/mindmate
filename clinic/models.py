@@ -7,12 +7,15 @@ from django.db import models
 
 class DoctorConditionTag(models.Model):
     CONDITION_CHOICES = [
-        ('depression', 'Depression'),
-        ('anxiety',    'Anxiety'),
-        ('stress',     'Stress'),
-        ('trauma',     'Trauma'),
-        ('ocd',        'OCD'),
-        ('general',    'General'),
+        ('child_adolescent', 'طب نفس الأطفال والمراهقين'),
+        ('geriatric', 'الطب النفسي للمسنين (الشيخوخة)'),
+        ('addiction', 'طب الإدمان'),
+        ('forensic', 'الطب النفسي الشرعي'),
+        ('psychosomatic', 'الطب النفسي الجسدي'),
+        ('neuropsychiatry', 'الفسيولوجيا العصبية السريرية والطب النفسي العصبي'),
+        ('psychotic', 'الفصام والاضطرابات الذهانية'),
+        ('mood', 'اضطرابات المزاج (الاكتئاب الحاد، والاضطراب ثنائي القطب)'),
+        ('anxiety_phobia_ptsd', 'اضطرابات القلق، الرهاب، واضطراب ما بعد الصدمة (PTSD)'),
     ]
 
     tag_id    = models.AutoField(primary_key=True)
@@ -165,3 +168,32 @@ class DoctorRating(models.Model):
 
     def __str__(self):
         return f"Rating(doctor={self.doctor_id}, user={self.user_id}, score={self.score})"
+
+
+# ============================================================
+# SIGNALS
+# ============================================================
+
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from accounts.models import Doctor
+
+@receiver(post_save, sender=Doctor)
+def auto_update_doctor_condition_tag(sender, instance, **kwargs):
+    SPECIALIZATION_TO_TAG = {
+        'طب نفس الأطفال والمراهقين': 'child_adolescent',
+        'الطب النفسي للمسنين (الشيخوخة)': 'geriatric',
+        'طب الإدمان': 'addiction',
+        'الطب النفسي الشرعي': 'forensic',
+        'الطب النفسي الجسدي': 'psychosomatic',
+        'الفسيولوجيا العصبية السريرية والطب النفسي العصبي': 'neuropsychiatry',
+        'الفصام والاضطرابات الذهانية': 'psychotic',
+        'اضطرابات المزاج (الاكتئاب الحاد، والاضطراب ثنائي القطب)': 'mood',
+        'اضطرابات القلق، الرهاب، واضطراب ما بعد الصدمة (PTSD)': 'anxiety_phobia_ptsd',
+    }
+    tag_val = SPECIALIZATION_TO_TAG.get(instance.specialization)
+    if tag_val:
+        # Delete any other tags to ensure unique condition mapping
+        DoctorConditionTag.objects.filter(doctor=instance).exclude(condition=tag_val).delete()
+        DoctorConditionTag.objects.get_or_create(doctor=instance, condition=tag_val)
+

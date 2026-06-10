@@ -31,7 +31,7 @@ class UserNotificationListView(generics.ListAPIView):
       ?unread=true  — إشعارات غير مقروءة فقط
     """
     authentication_classes = [CustomTokenAuthentication]
-    permission_classes     = [IsUserPermission]
+    permission_classes     = [permissions.IsAuthenticated, IsUserPermission]
 
     def get_queryset(self):
         qs = UserNotification.objects.filter(user=self.request.user).order_by('-created_at')
@@ -66,7 +66,7 @@ class UserNotificationMarkReadView(views.APIView):
     إذا لم يُرسَل الـ body يُعلَّم الكل مقروءاً.
     """
     authentication_classes = [CustomTokenAuthentication]
-    permission_classes     = [IsUserPermission]
+    permission_classes     = [permissions.IsAuthenticated, IsUserPermission]
 
     def post(self, request):
         ids = request.data.get('notification_ids')
@@ -86,7 +86,7 @@ class UserNotificationDeleteView(views.APIView):
     يحذف إشعاراً واحداً للمستخدم.
     """
     authentication_classes = [CustomTokenAuthentication]
-    permission_classes     = [IsUserPermission]
+    permission_classes     = [permissions.IsAuthenticated, IsUserPermission]
 
     def delete(self, request, notification_id):
         try:
@@ -112,7 +112,7 @@ class DoctorNotificationListView(generics.ListAPIView):
       ?unread=true  — إشعارات غير مقروءة فقط
     """
     authentication_classes = [CustomTokenAuthentication]
-    permission_classes     = [IsDoctorPermission]
+    permission_classes     = [permissions.IsAuthenticated, IsDoctorPermission]
 
     def get_queryset(self):
         qs = DoctorNotification.objects.filter(doctor=self.request.user).order_by('-created_at')
@@ -146,7 +146,7 @@ class DoctorNotificationMarkReadView(views.APIView):
     Body (optional): { "notification_ids": [1, 2, 3] }
     """
     authentication_classes = [CustomTokenAuthentication]
-    permission_classes     = [IsDoctorPermission]
+    permission_classes     = [permissions.IsAuthenticated, IsDoctorPermission]
 
     def post(self, request):
         ids = request.data.get('notification_ids')
@@ -165,7 +165,7 @@ class DoctorNotificationDeleteView(views.APIView):
     DELETE /api/notifications/doctor/<notification_id>/
     """
     authentication_classes = [CustomTokenAuthentication]
-    permission_classes     = [IsDoctorPermission]
+    permission_classes     = [permissions.IsAuthenticated, IsDoctorPermission]
 
     def delete(self, request, notification_id):
         try:

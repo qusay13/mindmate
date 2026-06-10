@@ -15,7 +15,7 @@ class ChatbotConversationView(views.APIView):
         conv = ChatbotConversation.objects.filter(
             user=request.user, 
             status='active'
-        ).order_by('-created_at').first()
+        ).order_by('-started_at').first()
 
         if not conv:
             conv = ChatbotConversation.objects.create(

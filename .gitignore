@@ -147,3 +147,5 @@ cython_debug/
 
 # PyCharm
 .idea/
+araBERT_git/
+

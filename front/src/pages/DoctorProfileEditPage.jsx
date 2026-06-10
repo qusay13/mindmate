@@ -46,7 +46,8 @@ const DoctorProfileEditPage = () => {
         const prefsRes = await notificationsAPI.getPreferences();
         setEmailNotifs(prefsRes.data.email_notifications);
         setPushNotifs(prefsRes.data.push_notifications);
-      } catch {
+      } catch (err) {
+        console.error('Error loading profile and preferences:', err);
         setError('Failed to load profile and preferences.');
       } finally {
         setLoading(false);
@@ -184,16 +185,15 @@ const DoctorProfileEditPage = () => {
   const avatarLetter = form.full_name?.[0]?.toUpperCase() || 'D';
 
   const SPECIALIZATIONS = [
-    'Depression & Mood Disorders',
-    'Anxiety & Panic Disorders',
-    'Stress & Burnout Management',
-    'Trauma & PTSD',
-    'OCD & Related Disorders',
-    'Child & Adolescent Psychiatry',
-    'Addiction & Substance Abuse',
-    'General Psychiatry',
-    'Cognitive Behavioral Therapy',
-    'Relationship & Family Therapy',
+    'طب نفس الأطفال والمراهقين',
+    'الطب النفسي للمسنين (الشيخوخة)',
+    'طب الإدمان',
+    'الطب النفسي الشرعي',
+    'الطب النفسي الجسدي',
+    'الفسيولوجيا العصبية السريرية والطب النفسي العصبي',
+    'الفصام والاضطرابات الذهانية',
+    'اضطرابات المزاج (الاكتئاب الحاد، والاضطراب ثنائي القطب)',
+    'اضطرابات القلق، الرهاب، واضطراب ما بعد الصدمة (PTSD)',
   ];
 
   return (

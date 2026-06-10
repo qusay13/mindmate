@@ -130,15 +130,25 @@ const DoctorRegisterPage = () => {
               <label>Specialization</label>
               <div className="input-with-icon">
                 <Stethoscope size={18} />
-                <input
-                  type="text"
+                <select
                   name="specialization"
                   className="input-field"
-                  placeholder="e.g. Clinical Psychologist"
                   value={formData.specialization}
                   onChange={handleChange}
                   required
-                />
+                  style={{ width: '100%' }}
+                >
+                  <option value="">Select Specialization</option>
+                  <option value="طب نفس الأطفال والمراهقين">طب نفس الأطفال والمراهقين</option>
+                  <option value="الطب النفسي للمسنين (الشيخوخة)">الطب النفسي للمسنين (الشيخوخة)</option>
+                  <option value="طب الإدمان">طب الإدمان</option>
+                  <option value="الطب النفسي الشرعي">الطب النفسي الشرعي</option>
+                  <option value="الطب النفسي الجسدي">الطب النفسي الجسدي</option>
+                  <option value="الفسيولوجيا العصبية السريرية والطب النفسي العصبي">الفسيولوجيا العصبية السريرية والطب النفسي العصبي</option>
+                  <option value="الفصام والاضطرابات الذهانية">الفصام والاضطرابات الذهانية</option>
+                  <option value="اضطرابات المزاج (الاكتئاب الحاد، والاضطراب ثنائي القطب)">اضطرابات المزاج (الاكتئاب الحاد، والاضطراب ثنائي القطب)</option>
+                  <option value="اضطرابات القلق، الرهاب، واضطراب ما بعد الصدمة (PTSD)">اضطرابات القلق، الرهاب، واضطراب ما بعد الصدمة (PTSD)</option>
+                </select>
               </div>
             </div>
 

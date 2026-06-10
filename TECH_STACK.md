@@ -1,6 +1,6 @@
 # 🛠️ MindMate — حصر الأدوات والتقنيات المستخدمة
 
-> **آخر تحديث:** 2026-05-09 | **الإصدار:** v4.1
+> **آخر تحديث:** 2026-06-06 | **الإصدار:** v5.0 (تحديث الإشعارات والدردشة المتقدمة)
 
 ---
 
@@ -40,6 +40,7 @@
 | **Django REST Framework (DRF)** | Latest | بناء RESTful APIs بسرعة مع Serializers و Permissions و Views |
 | **Django Channels** | Latest | تمديد Django لدعم WebSockets والاتصالات غير المتزامنة (Async) |
 | **Daphne** | Latest | خادم ASGI لتشغيل Django Channels في الإنتاج والتطوير |
+| **Celery** | 5.6.3 | خادم جدولة ومعالجة المهام الخلفية لإرسال إشعارات البريد و Web Push بشكل غير متزامن |
 
 **لماذا Django؟**
 - نظام ORM قوي يمنع SQL Injection تلقائياً.
@@ -49,12 +50,15 @@
 
 ---
 
-### مكتبات DRF الإضافية
+### مكتبات DRF الإضافية والمهام الخلفية
 
 | الأداة | سبب الاستخدام |
 |--------|---------------|
 | **corsheaders (django-cors-headers)** | السماح للـ Frontend (React) بالوصول إلى API على نطاق مختلف |
 | **channels_redis** | ربط Django Channels بخادم Redis لإدارة Channel Layers في الدردشة الفورية |
+| **pywebpush** | إرسال إشعارات Web Push الفورية إلى المتصفح عبر بروتوكول Web Push |
+| **py-vapid** | توليد وإدارة مفاتيح التشفير VAPID اللازمة للمصادقة وتأمين الإشعارات الفورية |
+| **http_ece** | تشفير محتوى الإشعارات الفورية (Payload encryption) لتأمين نقل البيانات للمتصفحات |
 
 ---
 
@@ -110,11 +114,11 @@
 
 ---
 
-### التخزين المؤقت (Caching)
+### التخزين المؤقت والوسيط للمهام (Caching & Message Broker)
 
 | الأداة | سبب الاستخدام |
 |--------|---------------|
-| **Redis** (عبر channels_redis) | - خادم Channel Layers للـ WebSockets<br>- ذاكرة تحليل مؤقتة (cache) لنتائج Analysis (6 ساعات)<br>- تقليل العبء على قاعدة البيانات عند جلب التقارير |
+| **Redis** (عبر channels_redis) | - خادم Channel Layers للـ WebSockets<br>- ذاكرة تحليل مؤقتة (cache) لنتائج Analysis (6 ساعات)<br>- وسيط رسائل (Message Broker) و backend للنتائج لصالح Celery<br>- تتبع مؤشرات حضور المستخدمين (Online/Offline) وتخزينها لحظياً |
 
 **لماذا Redis؟**
 - In-memory storage — سريع جداً للبيانات المتكررة.

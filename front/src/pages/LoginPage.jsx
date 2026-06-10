@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { LogIn, Mail, Lock, User as UserIcon } from 'lucide-react';
 
@@ -7,8 +7,17 @@ const LoginPage = () => {
   const [formData, setFormData] = useState({ email: '', password: '', role: 'user' });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [sessionExpired, setSessionExpired] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+
+  React.useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    if (params.get('expired') === 'true') {
+      setSessionExpired(true);
+    }
+  }, [location.search]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -34,6 +43,11 @@ const LoginPage = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="auth-form">
+          {sessionExpired && (
+            <div className="error-message" style={{ background: 'rgba(168, 85, 247, 0.1)', color: '#c084fc', border: '1px solid rgba(168, 85, 247, 0.3)' }}>
+              Your session has expired. Please log in again.
+            </div>
+          )}
           {error && <div className="error-message">{error}</div>}
           
           <div className="form-group">

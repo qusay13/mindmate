@@ -219,6 +219,17 @@ CORS_ALLOW_ALL_ORIGINS = True
 CORS_ALLOW_CREDENTIALS = True
 
 # ============================================================
+# Cache Configuration (Redis Shared Cache)
+# ============================================================
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": os.getenv('REDIS_CACHE_URL', 'redis://127.0.0.1:6379/2'),
+    }
+}
+
+
+# ============================================================
 # Celery Configuration
 # ============================================================
 CELERY_BROKER_URL         = os.getenv('CELERY_BROKER_URL', 'redis://127.0.0.1:6379/1')

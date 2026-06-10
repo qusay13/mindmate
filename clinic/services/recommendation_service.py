@@ -7,9 +7,9 @@ from accounts.models import Doctor
 
 # Maps questionnaire code → primary condition
 QUESTIONNAIRE_CONDITION_MAP = {
-    'PHQ9': 'depression',
-    'GAD7': 'anxiety',
-    'PSS10': 'stress',
+    'PHQ9': 'mood',
+    'GAD7': 'anxiety_phobia_ptsd',
+    'PSS10': 'psychosomatic',
 }
 
 # Minimum severity levels that trigger a recommendation
@@ -23,10 +23,45 @@ def suggest_doctor_for_user(user, questionnaire_code, severity_level):
 
     Returns: dict with doctor info or None
     """
-    if not severity_level or severity_level.lower() not in RECOMMEND_THRESHOLD:
-        return None  # No recommendation needed for mild/minimal
+    from datetime import date
+    from django.utils import timezone
+    from tracking.models import JournalEntry
 
-    condition = QUESTIONNAIRE_CONDITION_MAP.get(questionnaire_code)
+    # 1. Check age first (under 18 or 60+)
+    age = None
+    if user.date_of_birth:
+        today = timezone.localdate()
+        age = today.year - user.date_of_birth.year - ((today.month, today.day) < (user.date_of_birth.month, user.date_of_birth.day))
+
+    condition = None
+
+    if age is not None and age < 18:
+        condition = 'child_adolescent'
+    elif age is not None and age >= 60:
+        condition = 'geriatric'
+    else:
+        # 2. Check questionnaire result
+        if severity_level and severity_level.lower() in RECOMMEND_THRESHOLD:
+            condition = QUESTIONNAIRE_CONDITION_MAP.get(questionnaire_code)
+
+    # 3. If no condition from age/questionnaires, check journal keywords from the last 30 days
+    if not condition:
+        thirty_days_ago = timezone.localdate() - timezone.timedelta(days=30)
+        journals = JournalEntry.objects.filter(user=user, entry_date__gte=thirty_days_ago)
+        
+        # Merge all journal texts
+        journal_text = " ".join([j.content for j in journals]).lower()
+        
+        # Check keywords
+        if any(kw in journal_text for kw in ['إدمان', 'مدمن', 'كحول', 'مخدرات', 'حبوب', 'شراب', 'حشيش', 'سموم', 'addiction', 'drugs', 'alcohol']):
+            condition = 'addiction'
+        elif any(kw in journal_text for kw in ['محكمة', 'قانون', 'جريمة', 'عقوبة', 'سجن', 'قضية', 'حكم', 'جنائي', 'forensic', 'court', 'prison']):
+            condition = 'forensic'
+        elif any(kw in journal_text for kw in ['فصام', 'شيزوفرينيا', 'هلوسة', 'أصوات', 'ذهان', 'أوهام', 'ضلالات', 'schizophrenia', 'hallucinations', 'voices']):
+            condition = 'psychotic'
+        elif any(kw in journal_text for kw in ['دماغ', 'أعصاب', 'صرع', 'تشنج', 'رعشة', 'نسيان', 'ارتجاج', 'brain', 'neurology', 'epilepsy', 'seizure']):
+            condition = 'neuropsychiatry'
+
     if not condition:
         return None
 
@@ -55,8 +90,8 @@ def suggest_doctor_for_user(user, questionnaire_code, severity_level):
         'specialization': doctor.specialization,
         'bio': doctor.bio,
         'condition_match': condition,
-        'severity': severity_level,
-        'message': f'بناءً على نتائج تقييمك، نوصي بالتواصل مع متخصص في {_condition_label(condition)}.',
+        'severity': severity_level or 'N/A',
+        'message': f'بناءً على التقييم، نوصي بالتواصل مع متخصص في {_condition_label(condition)}.',
     }
 
 
@@ -72,11 +107,14 @@ def get_best_doctor_for_condition(condition):
 
 def _condition_label(condition):
     labels = {
-        'depression': 'الاكتئاب واضطرابات المزاج',
-        'anxiety': 'القلق واضطرابات الهلع',
-        'stress': 'التوتر والإرهاق النفسي',
-        'trauma': 'الصدمات النفسية',
-        'ocd': 'الوسواس القهري',
-        'general': 'الصحة النفسية العامة',
+        'child_adolescent': 'طب نفس الأطفال والمراهقين',
+        'geriatric': 'الطب النفسي للمسنين (الشيخوخة)',
+        'addiction': 'طب الإدمان وعلاج الاعتماد',
+        'forensic': 'الطب النفسي الشرعي والقانوني',
+        'psychosomatic': 'الطب النفسي الجسدي',
+        'neuropsychiatry': 'الفسيولوجيا العصبية السريرية والطب النفسي العصبي',
+        'psychotic': 'الفصام والاضطرابات الذهانية',
+        'mood': 'اضطرابات المزاج (الاكتئاب الحاد، والاضطراب ثنائي القطب)',
+        'anxiety_phobia_ptsd': 'اضطرابات القلق، الرهاب، واضطراب ما بعد الصدمة (PTSD)',
     }
-    return labels.get(condition, 'الصحة النفسية')
+    return labels.get(condition, 'الصحة النفسية والعقلية')

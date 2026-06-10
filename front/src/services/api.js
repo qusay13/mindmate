@@ -20,6 +20,26 @@ api.interceptors.request.use((config) => {
   return Promise.reject(error);
 });
 
+// Interceptor to handle expired tokens globally
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+      console.warn('Session expired or invalid. Logging out...');
+      localStorage.removeItem('mindmate_token');
+      localStorage.removeItem('mindmate_user');
+      if (
+        window.location.pathname !== '/login' &&
+        window.location.pathname !== '/register' &&
+        window.location.pathname !== '/doctor/register'
+      ) {
+        window.location.href = '/login?expired=true';
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
 export const authAPI = {
   login: (credentials) => api.post('accounts/login/', credentials),
   registerUser: (data) => api.post('accounts/register/user/', data),
@@ -89,8 +109,16 @@ export const chatbotAPI = {
 
 
 export const chatAPI = {
-  getConversations: () => api.get('chat/conversations/'),
+  getConversations: (params) => api.get('chat/conversations/', { params }),
   getMessages: (conversationId) => api.get(`chat/conversations/${conversationId}/messages/`),
+  getMessagesCursor: (url) => api.get(url.replace(API_BASE_URL, '')),
+  archiveConversation: (conversationId) => api.post(`chat/conversations/${conversationId}/archive/`),
+  deleteConversation: (conversationId) => api.delete(`chat/conversations/${conversationId}/`),
+  markConversationRead: (conversationId) => api.post(`chat/conversations/${conversationId}/mark-read/`),
+  uploadChatFile: (formData, onUploadProgress) => api.post('chat/upload/', formData, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+    onUploadProgress
+  }),
 };
 
 export const notificationsAPI = {

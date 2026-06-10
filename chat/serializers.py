@@ -12,10 +12,11 @@ class ConversationSerializer(serializers.ModelSerializer):
     last_message = serializers.SerializerMethodField()
     other_party  = serializers.SerializerMethodField()
     unread_count = serializers.SerializerMethodField()
+    is_archived  = serializers.SerializerMethodField()
 
     class Meta:
         model  = Conversation
-        fields = ['id', 'created_at', 'last_message', 'other_party', 'unread_count']
+        fields = ['id', 'created_at', 'last_message', 'other_party', 'unread_count', 'is_archived']
 
     def get_last_message(self, obj):
         last_msg = obj.messages.order_by('-created_at').first()
@@ -41,6 +42,17 @@ class ConversationSerializer(serializers.ModelSerializer):
             # Doctor: unread messages are those sent by patient
             return obj.messages.filter(sender_type='user', is_seen=False).count()
         return 0
+
+    def get_is_archived(self, obj):
+        request = self.context.get('request')
+        user    = request.user if request else None
+        if not user:
+            return False
+        if hasattr(user, 'user_id'):
+            return obj.is_archived_by_patient
+        elif hasattr(user, 'doctor_id'):
+            return obj.is_archived_by_doctor
+        return False
 
     def get_other_party(self, obj):
         """

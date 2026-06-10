@@ -46,7 +46,8 @@ const ProfileEditPage = () => {
         const prefsRes = await notificationsAPI.getPreferences();
         setEmailNotifs(prefsRes.data.email_notifications);
         setPushNotifs(prefsRes.data.push_notifications);
-      } catch {
+      } catch (err) {
+        console.error('Error loading profile and preferences:', err);
         setError('Failed to load profile and preferences.');
       } finally {
         setLoading(false);
